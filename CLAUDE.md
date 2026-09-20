@@ -62,6 +62,31 @@ approaches and the open questions.  Append new results to it (with the n-range t
 - Cusp tables complete for n<=2000 (cusps_n2000.csv.gz).  Results, counts and timings are in
   RESEARCH_LOG.md section 7.
 
+## Data publication policy (three tiers) -- keep to this
+The public repo is github.com/dperlman/ordered-binomial-cusps.  Generated data is large and
+reproducible, so it is NOT committed.  Anything new follows one of three tiers:
+
+- Tier 1 -- committed, always, as CSV text (~0.5 MB total).  Small curated summaries that let
+  someone reproduce the plots without downloading anything: public/per_n_summary.csv (one row per n)
+  and public/cusps_decade.csv (cusps for n=100,200,500,1000,2000).  Built ONLY by
+  make_public_data.py so they are reproducible and auditable, never hand-edited.  Text, not Parquet:
+  line diffs keep history small when they are regenerated.
+- Tier 2 -- committed, but rarely.  Mid-size derived tables (~1 MB) such as
+  public/negF3_neighbors.csv.  Re-commit only when the results actually change, not after every
+  rerun; each new version costs its full size in history forever.
+- Tier 3 -- GitHub Releases, NEVER in git history.  The big archives (cusps_n1000.csv.gz 11 MB,
+  cusps_n2000.csv.gz 45 MB) and per-n Parquet tie files.  Release assets live outside the repo, so
+  they do not affect clone size, and they get stable download URLs.  Tag one release per milestone
+  (v1.0-n2000 = the n<=2000 tables); a longer run means a NEW release, not a new version of a file.
+
+Rules that keep this working:
+- Never git-add anything under cusps/, data/ (except manifest.csv), analysis/, or a *.csv.gz.
+  .gitignore enforces this; do not override it with `git add -f`.
+- git-lfs is deliberately NOT used: on a public repo its bandwidth quota is billed to the owner for
+  everyone else's clones, and it breaks clones for anyone without lfs installed.  Use a Release.
+- Regenerate rather than restore.  Every ignored path has its rebuild command in .gitignore.
+- If an artifact is too big for Tier 1 but someone needs it offline, it is Tier 3, not Tier 2.
+
 ## Conventions
 - Never assume "double ties" (two pairs with the same p*) — none exist for n<=1000 (checked
   separately by the user), but flag any if found.  (For n<=2000 no two cusps share a p* at double

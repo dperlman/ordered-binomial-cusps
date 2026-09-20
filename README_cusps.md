@@ -24,9 +24,20 @@ Merge options: `--split-mb 25` splits the output into parts (with `cusps/cusps_m
 | n=1001..2000 (`cusps_fast.py`) | 37 min, ~40 s per n at n~2000, ~75 interval checks per n |
 | further (extrapolated) | ->3000 ~3.4 h, ->4000 ~11 h, ->5000 ~26 h (probably low) |
 
-## Current outputs
-- `cusps_n2000.csv.gz`: n=3..2000, 707,417 cusps (same data as `cusps/cusps_all.csv`)
-- `cusps_n1000.csv.gz`: n=3..1000, 176,816 cusps
+## Data
+
+Small curated tables are committed under `public/` (built by `make_public_data.py`):
+
+| file | rows | what |
+|---|---|---|
+| `public/per_n_summary.csv` | 1,998 | one row per n: counts, extremes, gap to E(1/2) |
+| `public/cusps_decade.csv` | 1,346 | all cusps for n = 100, 200, 500, 1000, 2000 |
+| `public/negF3_neighbors.csv` | 7,639 | every F3<0 cusp with nearest-cusp metrics |
+
+The full tables are attached to GitHub Releases rather than stored in the repo, so cloning stays
+cheap.  See the releases page for `cusps_n2000.csv.gz` (n=3..2000, 707,417 cusps, 45 MB) and
+`cusps_n1000.csv.gz` (n=3..1000, 176,816 cusps, 11 MB).  Everything else -- `cusps/`, `data/`,
+`analysis/` -- is regenerated locally by the commands above.
 
 ## Recompute any row at high precision
     .venv/bin/python cusps_fast.py --recheck 34 12 30 --dps 50

@@ -22,10 +22,11 @@ data/*
 !data/manifest.csv
 cusps_n*.csv.gz
 
-# analyse_cusps outputs copied to the top level for convenience
-per_n_summary.csv
-negF3_neighbors.csv
-all_neighbors.csv
+# analyze_cusps outputs copied to the top level for convenience.
+# Leading slash = root only, so the curated copies in public/ are still tracked.
+/per_n_summary.csv
+/negF3_neighbors.csv
+/all_neighbors.csv
 
 # --- run logs ---
 stage1.log
