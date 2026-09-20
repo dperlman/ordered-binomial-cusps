@@ -1,0 +1,33 @@
+# --- environment ---
+.venv/
+__pycache__/
+*.py[cod]
+# numba's on-disk cache (also lives in __pycache__)
+*.nbi
+*.nbc
+
+# --- macOS ---
+.DS_Store
+
+# --- generated data -------------------------------------------------------
+# Everything below is reproducible from the scripts; it is too big for git and
+# would swamp the history.  Rebuild instead of restoring:
+#   cusps/            cusps_fast.py --nmax N --workers 8 --out cusps/   then --merge
+#   data/             dump_ties.py --n N --data data/
+#   analysis/         analyze_cusps.py cusps/cusps_all.csv --out analysis/
+cusps/
+analysis/
+# (note: 'data/*' not 'data/', so the negation below can take effect)
+data/*
+!data/manifest.csv
+cusps_n*.csv.gz
+
+# analyse_cusps outputs copied to the top level for convenience
+per_n_summary.csv
+negF3_neighbors.csv
+all_neighbors.csv
+
+# --- run logs ---
+stage1.log
+stage2.log
+analysis_run.log
