@@ -56,7 +56,7 @@ HEADER = "n,i,j,pstar,E,F3,F3_sign,S_minus,S_plus,slope_left,slope_right,certifi
 
 def screen_n(n):
     """[(i,j,'MIN'|'CHECK')] for every tie point of n that is not decided NOT in double precision."""
-    r = core.screen(n, normalise=False, collect_all=False)
+    r = core.screen(n, collect_all=False)
     return [(int(r['i'][t]), int(r['j'][t]), 'MIN' if r['tag'][t] == TAG_MIN else 'CHECK')
             for t in range(len(r['i']))]
 

@@ -25,8 +25,8 @@ def tie_points(n, lnC):
     o = np.argsort(p, kind='stable'); return p[o], i[o], j[o]
 
 def E_half(n, lnC=None):
-    """E(n,1/2), normalised masses (binom_core).  Was computed unnormalised here until 2026-09-20,
-    which cost ~3 digits on E - E(1/2) at n=2000."""
+    """E(n,1/2) from binom_core (normalised masses).  lnC is accepted and ignored, for callers
+    that still pass it."""
     return _E_half(n)
 
 def main():

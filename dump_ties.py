@@ -51,7 +51,7 @@ def build(n, data, force=False, verify=None):
     if os.path.exists(os.path.join(tdir, "part.parquet")) and not force:
         print(f"n={n}: exists, skipping (use --force)"); return None
     t0 = time.time()
-    r = core.screen(n, normalise=True, collect_all=True)
+    r = core.screen(n, collect_all=True)
     o = np.argsort(r['pstar'], kind='stable')
     r = {k: v[o] for k, v in r.items()}
     c = len(r['i'])
@@ -154,5 +154,5 @@ if __name__ == "__main__":
     ap.add_argument("--verify", nargs='?', const="cusps/cusps_all.csv", default=None,
                     help="cross-check the cusp set against this certified CSV table")
     a = ap.parse_args()
-    core.screen(10, normalise=True, collect_all=True)     # compile the kernel once up front
+    core.screen(10, collect_all=True)     # compile the kernel once up front
     for n in a.n: build(n, a.data, a.force, a.verify)
