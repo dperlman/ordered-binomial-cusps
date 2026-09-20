@@ -221,3 +221,21 @@ E'_+ - E'_- = D to 6e-16.
   The gap scales as n^(-3/2), not ~0.04/n: min(E - E(1/2)) * n^(3/2) = 0.483 (n even), 0.683 (n odd) at
   n=500..2000 (fit exponent -1.499; odd/even ratio 1.412, close to sqrt 2).  Values of min*n:
   n=100: 0.048, 1000: 0.0153, 2000: 0.0108 (even).
+
+### 2026-09-20 (Claude Code): shared core, in-place certification, public tables regenerated
+- binom_core.py is now the single implementation of the kernel, certify(), E_half, lnC and
+  evaluate; cusps_fast.py, dump_ties.py and analyze_cusps.py import it.  Acceptance test:
+  rebuilding n=3..1000 reproduces all 998 per-n files and the interval-check log byte for byte
+  (1 min 48 s), as do n=1995..2000 and their 448 check lines.
+- dump_ties.py certifies in place rather than looking is_cusp up in cusps_all.csv.  n=2001 (outside
+  that table) builds 999,000 ties and 706 cusps from 75 certifications in 41 s; the linear fit
+  predicts 707.  Under the old lookup it would have reported zero cusps and raised nothing.
+- analyze_cusps.py now uses the normalised E_half, and public/ was regenerated.  Only E_half and
+  min_E_minus_Ehalf changed (max rel 7.7e-4, at large n); all counts, extremes and F3 statistics are
+  unchanged.  The n^(-3/2) constants are unmoved: 0.483150 (even), 0.682404 (odd), sd ~2e-4.
+- CAVEAT: this fixed only half of that quantity.  analyze_cusps reads E from cusps_all.csv, whose E
+  column was computed from unnormalised masses, so min_E_minus_Ehalf is ~3.7 digits at n=2000 rather
+  than ~3.6 -- not the ~6.3 the Parquet path gets by normalising both.  Cross-check of the same
+  quantity: n=100 differs by 1.5e-12 between the two paths, n=1000 by 3.0e-10.  For anything needing
+  more than ~4 digits on E - E(1/2), use the Parquet datasets, not cusps_all.csv.  Fixing the CSV
+  would mean regenerating all of cusps/ with normalise=True (~40 min) and is not done.
