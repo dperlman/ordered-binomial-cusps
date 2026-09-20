@@ -93,9 +93,17 @@ def work(args):
     return n, len(rows), time.time()-t0
 
 def merge(outdir, split_mb=0, nmin=None, nmax=None, slim=False):
-    files = sorted(glob.glob(os.path.join(outdir, "n*.csv")))
-    files = [f for f in files if (nmin is None or int(os.path.basename(f)[1:6]) >= nmin)
-                              and (nmax is None or int(os.path.basename(f)[1:6]) <= nmax)]
+    # strict name match: a sync service can leave stale copies like "n01993 2.csv" next to the
+    # real files, and a loose n*.csv glob merges them in as silent duplicate rows.
+    import re
+    pat = re.compile(r"^n(\d{5})\.csv$")
+    files = []
+    for f in sorted(glob.glob(os.path.join(outdir, "n*.csv"))):
+        m = pat.match(os.path.basename(f))
+        if not m:
+            print(f"  skipping unexpected file: {os.path.basename(f)}"); continue
+        n = int(m.group(1))
+        if (nmin is None or n >= nmin) and (nmax is None or n <= nmax): files.append(f)
     header = HEADER
     def conv(line):
         if not slim: return line

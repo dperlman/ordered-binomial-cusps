@@ -239,3 +239,26 @@ E'_+ - E'_- = D to 6e-16.
   quantity: n=100 differs by 1.5e-12 between the two paths, n=1000 by 3.0e-10.  For anything needing
   more than ~4 digits on E - E(1/2), use the Parquet datasets, not cusps_all.csv.  Fixing the CSV
   would mean regenerating all of cusps/ with normalise=True (~40 min) and is not done.
+
+### 2026-09-20 (Claude Code, later): evaluate() folded into the kernel; cusps/ regenerated
+- evaluate() used to recompute the masses itself (unnormalised, ranked with lexsort) -- a second
+  implementation of the same mathematics, and the reason the CSV E column was ~1.2e-9 off.  It is now
+  served by _one_tie, the single place masses and ranks are computed anywhere in the project.
+  E against 60-digit exact: 2.8e-14 at n=200, 0 at n=1000, 2.3e-13 at n=2000.  E - E(1/2) therefore
+  carries 7.4 digits at n=2000, against 3.6 before and 3.7 after the half-fix earlier today.
+- Removed the flags that existed only to reproduce the older, less accurate output: normalise on
+  tie_kernel/screen and on E_half, evaluate()'s own mass computation, and the arbitrary -700 cutoff
+  that zeroed the kink below ~1e-304 while ln_fi still reported it (so kappa and D disagreed for the
+  deepest ties; smallest kappa at n=100 is now 5.4e-26, all positive).  collect_all remains: it
+  selects which rows are emitted, not how they are computed.
+- cusps/ fully regenerated (41 min 28 s, 8 workers).  Unchanged: 707,417 cusps, 7,639 with F3<0,
+  0 UNRESOLVED, 34,789 interval checks, n<=200 still 7048/70, and every cusp (i,j) set, pstar, F3 and
+  certification route.  Changed: E and the slope numerators, by about the size of the old error.
+  per_n_summary: only min_E_minus_Ehalf, median_slope_jump and min_slope_jump moved; the n^(-3/2)
+  constants are 0.483152 (even) and 0.682401 (odd), unmoved within their ~2e-4 scatter.
+- HAZARD found during the rebuild: after `rm -rf cusps/`, eight stale files from the 2026-09-17 run
+  reappeared as "n01993 2.csv" ... "n02000 2.csv", with their original timestamps -- a sync service
+  (Dropbox is running; the folder is under ~/Documents) restoring deleted copies.  They held the OLD
+  unnormalised values and matched merge's n*.csv glob, so they would have been merged in as silent
+  duplicate rows.  merge() now matches ^n\d{5}\.csv$ exactly and prints anything it skips.  Check
+  the merged row count against the expected total after any regeneration.
