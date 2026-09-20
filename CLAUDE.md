@@ -21,7 +21,17 @@ approaches and the open questions.  Append new results to it (with the n-range t
 - Conjecture under study: E(n,p) >= E(n,1/2) for all p (p=1/2 is the global minimum).
 
 ## Code
-- cusps_fast.py is the only script.  Parallel, resumable generator of all cusp points up to
+- binom_core.py is the ONLY implementation of the mathematics: constants (MARGIN/GAP/TINY), lnC,
+  E_half, the numba screening kernel (tie_kernel/screen), certify()/certify_escalating(),
+  evaluate(), recheck().  Every other script imports it.  Do not re-derive any of this elsewhere --
+  before this existed the mass recurrence, the rank merge, the F3 formula and E_half were each
+  written twice, and the two E_half versions had already drifted apart (500x different error at
+  n=2000).  numpy + numba + mpmath only, so the certified numerics stay auditable.
+- tie_kernel has two flags.  normalise=False reproduces the historical output bit-for-bit and is
+  what cusps_fast.py uses; normalise=True divides the masses by their own sum (better E, see
+  RESEARCH_LOG section 7) and is what dump_ties.py uses.  collect_all=False returns only MIN/CHECK
+  tie points, True returns every tie point.
+- cusps_fast.py: the certified generator (CLI, parallel driver, per-n CSV, merge, recheck).  Parallel, resumable generator of all cusp points up to
   --nmax; its docstring holds the definitions, method, column list and history.
   Run: python cusps_fast.py --nmax 2000 --workers 8 --out cusps/  then  --merge --out cusps/.
   Merge options: --split-mb, --merge-nmin/--merge-nmax, --slim.  --recheck n i j gives 50-digit values.
@@ -30,10 +40,15 @@ approaches and the open questions.  Append new results to it (with the n-range t
   workload at 4-86 checks per n (mean 33) for n=1001..2000.
 - One CSV per n in cusps/; cusps/cusps_all.csv after merge; interval_checks.log lists every
   tie point that needed interval arithmetic and its verdict.
-- dump_ties.py (numpy+numba+pyarrow): builds the Parquet plotting datasets for a given n --
+- dump_ties.py (binom_core + pyarrow): builds the Parquet plotting datasets for a given n --
   data/ties/n=NNNNN/ (every tie point) and data/cusps/n=NNNNN/ (cusp subset).  Run
-  .venv/bin/python dump_ties.py --n 100 --data data/.  It takes is_cusp from cusps_all.csv and
-  never re-decides certification.
+  .venv/bin/python dump_ties.py --n 100 --data data/ [--verify].  It CERTIFIES IN PLACE using
+  binom_core.certify, and records decided_by per row.  It does not look is_cusp up in
+  cusps_all.csv: a lookup silently marks every tie point as a non-cusp for any n the CSV does not
+  cover, which looks like a result rather than an error.  --verify cross-checks against the CSV
+  where it exists, as a regression test rather than a dependency.
+- Every tie point carries the full slope decomposition (A/T/V and their slopes), not just cusps;
+  only the cusp-to-cusp distance columns are cusp-specific.
 - cusps_data.py: reader for those datasets; derives width, band, w_i, f_i, T, A, V, all the slopes,
   D and the gap columns.  Use it rather than recomputing -- it encodes two numerical rules
   (normalised masses, and never subtracting S_plus-S_minus).  See RESEARCH_LOG.md section 7.

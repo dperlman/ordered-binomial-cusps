@@ -20,10 +20,12 @@ Definitions
   F3      = (n+i-j)(i+j-2np*) + (j-np*)      (question (3) of the note)
 
 Method
-  Screening kernel (numba): for each tie point (i,j), masses via the recurrence
-  f_{k+1} = f_k * rho * (n-k)/(k+1) outward from the mode, ranks via a two-pointer merge of the
-  increasing left run and the decreasing right run (unimodality), then S_- and S_+.
-  No sorting, O(n) per tie point, O(n) memory.  Masses below TINY are set to zero.
+  The screening kernel, the certification and the descriptive values all live in binom_core.py,
+  which is the single implementation shared with dump_ties.py.  For each tie point (i,j) the masses
+  come from the recurrence f_{k+1} = f_k * rho * (n-k)/(k+1) outward from the mode, the ranks from a
+  two-pointer merge of the increasing left run and the decreasing right run (unimodality), then S_-
+  and S_+.  No sorting, O(n) per tie point, O(n) memory.  Masses below TINY are set to zero.
+  This script screens with normalise=False, which is what every existing cusps/ file was built with.
   A tie point is accepted in double precision if S_- < -MARGIN and S_+ > MARGIN (or rejected if
   clearly the other way).  It is instead re-certified with 50/100/200-digit interval arithmetic
   (mpmath.iv) if it is within MARGIN of a decision boundary, or if two adjacent masses in the
@@ -45,112 +47,22 @@ History
   interval-check log of the old script byte for byte.  See README_cusps.md.
 """
 import argparse, os, sys, time, glob
-import numpy as np
-from math import comb, lgamma
 from multiprocessing import Pool, cpu_count
-from numba import njit
 
-MARGIN, GAP, TINY = 1e-6, 1e-8, 1e-290
+import binom_core as core
+from binom_core import MARGIN, GAP, TINY, TAG_MIN
+
 HEADER = "n,i,j,pstar,E,F3,F3_sign,S_minus,S_plus,slope_left,slope_right,certified_by\n"
 
-@njit(cache=True)
-def _screen_kernel(n, lnC, out_i, out_j, out_tag):
-    """Fill out_* with tie points that are MIN (tag 1) or need CHECK (tag 2). Returns count."""
-    cap = out_i.shape[0]
-    f = np.empty(n+1); w = np.empty(n+1, np.int64); cnt = 0
-    for i in range(1, n):
-        for j in range(max(i+1, n-i+1), n):          # i<j<n and i+j>n
-            m = j - i
-            lnrho = (lnC[i] - lnC[j]) / m
-            p = 1.0/(1.0 + np.exp(-lnrho)); q = 1.0 - p; rho = p/q
-            # mode of Bin(n,p): floor((n+1)p)
-            md = int(np.floor((n+1)*p))
-            if md > n: md = n
-            f[md] = np.exp(lnC[md] + md*np.log(p) + (n-md)*np.log(q))
-            for k in range(md, 0, -1):               # leftwards: f_{k-1} = f_k * k/((n-k+1) rho)
-                f[k-1] = f[k] * k / ((n-k+1.0)*rho)
-            for k in range(md, n):                   # rightwards
-                f[k+1] = f[k] * rho*(n-k) / (k+1.0)
-            for k in range(n+1):                     # masses below TINY are numerically zero
-                if f[k] < TINY: f[k] = 0.0
-            f[j] = f[i]                              # exact tie
-            lnkap = np.log(m) + lnC[i] + i*np.log(p) + (n-i)*np.log(q)   # kink height (j-i) f(i), exact
-            kap = np.exp(lnkap) if lnkap > -700.0 else 0.0
-            # split point: left run 0..s increasing, right run s+1..n decreasing; need i<=s<j
-            s = md
-            if s >= j: s = j - 1
-            if s < i: s = i
-            # two-pointer merge, increasing order; ties: j before i, otherwise left first
-            a = 0; b = n; r = 0
-            neartie = False; prev = -1.0
-            while a <= s or b > s:
-                if a > s: take_left = False
-                elif b <= s: take_left = True
-                elif f[a] < f[b]: take_left = True
-                elif f[a] > f[b]: take_left = False
-                else:                                # equal
-                    take_left = not (a == i and b == j)
-                if take_left: k = a; a += 1
-                else:         k = b; b -= 1
-                w[k] = r
-                if r > 0 and f[k] > 0.0 and not ((k == i and prev == f[j]) or (k == j and prev == f[i])):
-                    if (f[k] - prev)/f[k] < GAP and not (k == i or k == j): neartie = True
-                    if (k == i or k == j) and (f[k]-prev)/f[k] < GAP and prev != f[k]: neartie = True
-                prev = f[k]; r += 1
-            Sm = 0.0
-            for k in range(n+1): Sm += w[k]*f[k]*(k - n*p)
-            Sp = Sm + kap
-            ismin = (Sm < -MARGIN) and (Sp > MARGIN)
-            isnot = (Sm > MARGIN) or (Sp < -MARGIN)
-            if neartie or not (ismin or isnot):
-                if cnt < cap:
-                    out_i[cnt] = i; out_j[cnt] = j; out_tag[cnt] = 2
-                cnt += 1
-            elif ismin:
-                if cnt < cap:
-                    out_i[cnt] = i; out_j[cnt] = j; out_tag[cnt] = 1
-                cnt += 1
-    return cnt
-
 def screen_n(n):
-    lnC = np.array([lgamma(n+1)-lgamma(k+1)-lgamma(n-k+1) for k in range(n+1)])
-    cap = max(64, 4*n)
-    while True:
-        oi = np.empty(cap, np.int64); oj = np.empty(cap, np.int64); ot = np.empty(cap, np.int64)
-        c = _screen_kernel(n, lnC, oi, oj, ot)
-        if c <= cap: break
-        cap = 2*c                                    # too small: retry with a bigger buffer
-    return [(int(oi[t]), int(oj[t]), 'MIN' if ot[t] == 1 else 'CHECK') for t in range(c)]
+    """[(i,j,'MIN'|'CHECK')] for every tie point of n that is not decided NOT in double precision."""
+    r = core.screen(n, normalise=False, collect_all=False)
+    return [(int(r['i'][t]), int(r['j'][t]), 'MIN' if r['tag'][t] == TAG_MIN else 'CHECK')
+            for t in range(len(r['i']))]
 
-# --- certification, descriptive values, per-n driver, merge, recheck -------------------
-def certify(n, i, j, dps):
-    from mpmath import iv
-    iv.dps = dps; m = j-i
-    rho = (iv.mpf(comb(n,i))/iv.mpf(comb(n,j)))**(iv.mpf(1)/m)
-    p = rho/(1+rho); q = 1-p
-    f = [iv.mpf(comb(n,k))*p**k*q**(n-k) for k in range(n+1)]
-    order = sorted(range(n+1), key=lambda k: (f[i].mid if k in (i,j) else f[k].mid, 0 if k==j else 1))
-    for a, b in zip(order, order[1:]):
-        if {a,b} == {i,j}: continue
-        if not (f[a].b < f[b].a): return None
-    w = [0]*(n+1)
-    for r, k in enumerate(order): w[k] = r
-    Sm = sum(w[k]*f[k]*(k-n*p) for k in range(n+1)); Sp = Sm + m*f[i]
-    if Sm.b < 0 and Sp.a > 0: return 'MIN'
-    if Sm.a >= 0 or Sp.b <= 0: return 'NOT'
-    return None
-
-def evaluate(n, i, j):
-    lnC = np.array([lgamma(n+1)-lgamma(k+1)-lgamma(n-k+1) for k in range(n+1)]); k = np.arange(n+1); m = j-i
-    lnrho = (lnC[i]-lnC[j])/m; p = 1/(1+np.exp(-lnrho)); q = 1-p
-    with np.errstate(under='ignore'):
-        f = np.exp(lnC + k*np.log(p) + (n-k)*np.log(q))
-    f[j] = f[i]
-    key2 = np.zeros(n+1); key2[i] = 1
-    order = np.lexsort((key2, f)); w = np.empty(n+1, int); w[order] = k
-    Sm = float(np.sum(w*f*(k-n*p))); Sp = Sm + m*f[i]
-    E = float(np.sum(w*f)); F3 = (n+i-j)*(i+j-2*n*p) + (j-n*p)
-    return p, E, F3, Sm, Sp, Sm/(p*q), Sp/(p*q)
+certify = core.certify
+evaluate = core.evaluate
+recheck = core.recheck
 
 def work(args):
     n, outdir = args
@@ -160,10 +72,8 @@ def work(args):
     for (i, j, tag) in screen_n(n):
         how = 'double'
         if tag == 'CHECK':
-            v = None
-            for dps in (50, 100, 200):
-                v = certify(n, i, j, dps)
-                if v: how = f'iv{dps}'; break
+            v, how = core.certify_escalating(n, i, j)
+            if v is None: how = 'double'
             checks.append(f"{n},{i},{j},{v or 'UNRESOLVED'},{how}\n")
             if v != 'MIN':
                 if v is None: rows.append((i, j, 'UNRESOLVED'))
@@ -215,21 +125,6 @@ def merge(outdir, split_mb=0, nmin=None, nmax=None, slim=False):
         for name, a, b, sz in manifest:
             line = f"{os.path.basename(name)}: n={a}..{b}, {sz/1e6:.1f} MB"; print(line); mf.write(line + "\n")
     print(f"{total} rows in {len(manifest)} file(s)")
-
-def recheck(n, i, j, dps=50):
-    from mpmath import mp, mpf, nstr
-    mp.dps = dps; m = j-i
-    rho = (mpf(comb(n,i))/comb(n,j))**(mpf(1)/m); p = rho/(1+rho); q = 1-p
-    f = [comb(n,k)*p**k*q**(n-k) for k in range(n+1)]
-    order = sorted(range(n+1), key=lambda k: (f[i] if k in (i,j) else f[k], 0 if k==j else 1))
-    w = [0]*(n+1)
-    for r, k in enumerate(order): w[k] = r
-    Sm = sum(w[k]*f[k]*(k-n*p) for k in range(n+1)); Sp = Sm + m*f[i]
-    E = sum(w[k]*f[k] for k in range(n+1)); F3 = (n+i-j)*(i+j-2*n*p) + (j-n*p)
-    print(f"n={n} i={i} j={j}  ({dps} digits)")
-    for name, v in (("p*",p),("E",E),("F3",F3),("S_-",Sm),("S_+",Sp),("slope_left",Sm/(p*q)),("slope_right",Sp/(p*q))):
-        print(f"  {name:12s} {nstr(v, dps-10)}")
-    print("  cusp:", Sm < 0 < Sp)
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()

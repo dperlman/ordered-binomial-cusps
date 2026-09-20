@@ -15,8 +15,7 @@ import numpy as np
 from math import lgamma
 from collections import defaultdict
 
-def lnC_arr(n):
-    k = np.arange(n+1); return lgamma(n+1) - np.array([lgamma(t+1)+lgamma(n-t+1) for t in k])
+from binom_core import lnC_arr, E_half as _E_half     # single implementation, see binom_core.py
 
 def tie_points(n, lnC):
     """all (p*, i, j) with 0<i<j<n, i+j>n, sorted by p*"""
@@ -25,8 +24,10 @@ def tie_points(n, lnC):
     p = 1/(1+np.exp(-(lnC[i]-lnC[j])/(j-i)))
     o = np.argsort(p, kind='stable'); return p[o], i[o], j[o]
 
-def E_half(n, lnC):
-    f = np.exp(lnC - n*np.log(2.0)); g = np.sort(f); return float(np.sum(np.arange(n+1)*g))
+def E_half(n, lnC=None):
+    """E(n,1/2), normalised masses (binom_core).  Was computed unnormalised here until 2026-09-20,
+    which cost ~3 digits on E - E(1/2) at n=2000."""
+    return _E_half(n)
 
 def main():
     ap = argparse.ArgumentParser()

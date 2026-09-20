@@ -146,7 +146,7 @@ Sizes: cusps for all n<=5000 ~199 MB.  Ties are per-n: 6 MB at n=1000, 24 MB at 
 5000 -- fine individually, but ALL n<=5000 would be 250 GB, so only build the n you need.
 
 Stored (float64 unless noted): i, j (int16; n is the partition key), pstar, ln_fi, E_minus_Ehalf,
-S_minus, F3, is_cusp (bool), certified_by, gap_prev, gap_next, rank_in_n (int32).
+S_minus, F3, is_cusp (bool), decided_by, gap_prev, gap_next, rank_in_n (int32).
 Cusp files add cusp_gap_prev/next, cusp_intervening_prev/next, nb_i, nb_j.
 Derived in cusps_data.py: n, width=j-i, band=i+j-n, w_i, f_i, u=f/(p*q*), kappa, S_plus, E, T, A, V,
 slope_left/right, slope_T, slope_A, slope_V_right, D, gap_nearest, n_gap_nearest, cusp_gap_nearest.
@@ -163,7 +163,13 @@ Two decisions that matter numerically, both found while testing n=100:
   S_plus = S_minus + kappa and slope_right = slope_left + D, D = kappa/(p*q*).  Never compute
   slope_right as S_plus/(p*q*).  D spans 26 orders of magnitude at n=100 alone and is exact this way.
 
-is_cusp is taken from the certified table (cusps_all.csv), never decided in dump_ties.py.
+is_cusp is certified in place by dump_ties.py using binom_core.certify -- the same code the
+generator runs -- and decided_by records the route ('double', 'iv50'/'iv100'/'iv200', or
+'UNRESOLVED').  It is NOT looked up in cusps_all.csv: that table only covers n<=2000, and a lookup
+would label every tie point of any larger n a non-cusp without raising anything.  Re-certifying
+costs only the CHECK-tagged tie points (75 at n=2001: 16.8s of a 41s build).  --verify compares
+against the CSV where it exists: at n=100 and n=1000 the cusp set and the certification route
+agree on every row.
 
 F3 is the right-hand slope of T+V in units of u = f/(p*q*), NOT the slope of T:
     (T+V)'_+ = F3 u,  (T+V)'_- = (F3-(j-i)) u,  T' = (F3-(j-i)/2) u,  V'_± = ±(j-i)/2 u.

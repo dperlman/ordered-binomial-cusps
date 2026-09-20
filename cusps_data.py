@@ -27,7 +27,7 @@ import glob, os
 import numpy as np
 
 STORED = ["i", "j", "pstar", "ln_fi", "E_minus_Ehalf", "S_minus", "F3",
-          "is_cusp", "certified_by", "gap_prev", "gap_next", "rank_in_n"]
+          "is_cusp", "decided_by", "gap_prev", "gap_next", "rank_in_n"]
 CUSP_EXTRA = ["cusp_gap_prev", "cusp_gap_next", "cusp_intervening_prev", "cusp_intervening_next",
               "nb_i", "nb_j"]
 DERIVED = ["n", "width", "band", "w_i", "f_i", "u", "kappa", "S_plus", "E", "E_half", "T", "A", "V",
