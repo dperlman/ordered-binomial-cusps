@@ -20,6 +20,7 @@ def main():
     ap.add_argument("--data", default="data"); ap.add_argument("--out", default="plots")
     ap.add_argument("--width", type=int, default=10000); ap.add_argument("--height", type=int, default=6000)
     ap.add_argument("--cmin", type=float, default=-30)
+    ap.add_argument("--linear", action="store_true", help="plot D itself instead of log10 D")
     a = ap.parse_args()
     import matplotlib; matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -35,17 +36,22 @@ def main():
 
     dpi = 100
     fig, ax = plt.subplots(figsize=(a.width/dpi, a.height/dpi), dpi=dpi)
-    ms = float(np.clip(6e5/o.sum(), 2.2, 40))            # bigger dots when there are few points
-    sc = ax.scatter(x[o], log10D[o], c=col[o], s=ms, alpha=0.6, linewidths=0, cmap="viridis",
+    y = 10.0**log10D if a.linear else log10D
+    ms = float(np.clip(1.2e6/o.sum(), 4.0, 60))          # bigger dots when there are few points
+    sc = ax.scatter(x[o], y[o], c=col[o], s=ms, alpha=0.85, linewidths=0, cmap="viridis",
                     norm=norm, rasterized=True, zorder=2)
-    ax.scatter(x[cusp], log10D[cusp], s=140, facecolors="none", edgecolors="#d1495b",
-               linewidths=1.8, zorder=4)
-    ax.scatter(x[axis], log10D[axis], s=1100, marker="*", c="#f0a202", edgecolors="#6b4500",
+    ax.scatter(x[cusp], y[cusp], s=220, facecolors="none", edgecolors="#d1495b",
+               linewidths=2.2, zorder=4)
+    ax.scatter(x[axis], y[axis], s=1100, marker="*", c="#f0a202", edgecolors="#6b4500",
                linewidths=3, zorder=5)
-    ax.axhline(0, color="0.3", lw=2.5, ls="--", zorder=1)
+    ax.axhline(1.0 if a.linear else 0.0, color="0.3", lw=2.5, ls="--", zorder=1)
+    if a.linear:
+        ax.axhline(0.0, color="0.15", lw=3, zorder=1)
+        ax.set_ylim(-0.03*y[o].max(), 1.06*max(y[o].max(), y[axis].max()))
     ax.set_xlim(-0.005*len(x), 1.005*len(x))
     ax.set_xlabel("tie-point index, ordered by $p^*$  (0 = the $p=1/2$ axis)", fontsize=36, labelpad=22)
-    ax.set_ylabel(r"$\log_{10}\,D$,   $D = E'_+ - E'_- = (j-i)\,f(i)/(p^*q^*)$", fontsize=36, labelpad=22)
+    ax.set_ylabel((r"$D = E'_+ - E'_- = (j-i)\,f(i)/(p^*q^*)$   (linear)" if a.linear else
+                   r"$\log_{10}\,D$,   $D = E'_+ - E'_- = (j-i)\,f(i)/(p^*q^*)$"), fontsize=36, labelpad=22)
     sec = ax.twiny(); sec.set_xlim(ax.get_xlim())
     ticks = np.linspace(0, len(x)-1, 11).astype(int)
     sec.set_xticks(ticks); sec.set_xticklabels([f"{p[t]:.4f}" for t in ticks])
@@ -66,7 +72,7 @@ def main():
             f"min D among cusps = 10^{log10D[cusp].min():.2f}",
             transform=ax.transAxes, ha="right", fontsize=24, color="0.35")
     os.makedirs(a.out, exist_ok=True)
-    path = os.path.join(a.out, f"slope_jump_n{a.n:05d}.png")
+    path = os.path.join(a.out, f"slope_jump_n{a.n:05d}{'_linear' if a.linear else ''}.png")
     fig.savefig(path, dpi=dpi, bbox_inches="tight"); plt.close(fig)
     print(f"{path}  ({os.path.getsize(path)/1e6:.1f} MB)   log10 D: min {log10D[o].min():.1f}, "
           f"max {log10D[o].max():.2f};  cusps span {log10D[cusp].min():.2f}..{log10D[cusp].max():.2f}")
