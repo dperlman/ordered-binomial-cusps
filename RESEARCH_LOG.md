@@ -425,3 +425,22 @@ new trigger drops that the old rule flagged, certify anyway and confirm the verd
   6.6e-8 at n=1075).  That is expected from sampling only 5 values of n rather than 2,997: the
   envelope is built from rare events, so it needs many n to dip.  It is NOT evidence that the floor
   rises with n.
+
+### 2026-09-21 (Claude Code): E at the first three cusps (plotting/first_cusps.py)
+- Raw E is useless for this: E ~ n/2, and at n=1000 E(1/2) and the first three cusps all read
+  975.2624.  The content is in E - E(1/2), which for the k-th cusp is a clean power law.
+- Each of the first three cusps has (E - E(1/2)) * n^(3/2) CONSTANT over n=500..3000:
+      1st cusp: 0.48324 (n even, sd 1.8e-4) / 0.68254 (n odd, sd 2.7e-4)   ratio 1.4125 ~ sqrt 2
+      2nd cusp: 1.96298 (even, sd 8.2e-4)   / 1.96311 (odd, sd 7.5e-4)     -- PARITY-INDEPENDENT
+      3rd cusp: 4.03423 (even, sd 1.2e-1)   / 4.23822 (odd, sd 6.4e-2)
+  So the n^(-3/2) law found earlier for the closest cusp extends to the 2nd and 3rd, and the
+  even/odd split is a property of the FIRST cusp alone: the 2nd has the same constant for both
+  parities, to 4 decimal places.  Ratios to the 1st: 4.062 / 8.348 (even), 2.876 / 6.210 (odd) --
+  the parity dependence of the ratios is entirely inherited from the denominator.
+- The k-th cusp is the k-th band (i+j = n+k) essentially always: 100% for k=1 and k=2 over
+  n=500..3000, and 99.8% for k=3.  The 5 exceptions (n = 792, 841, 890, 994, 1600) are n where the
+  m=2 band contributes TWO cusps, so the third cusp by p* is still in band 2.  Those are the
+  visible dips in panel (c) and the only source of scatter in the 3rd-cusp constant (sd 1.2e-1
+  against 8e-4 for the 2nd).
+- Not explained: why the 2nd cusp's constant is parity-free while the 1st splits by sqrt 2, and
+  what 1.96298 and 4.034 are in closed form.  The n^(-3/2) scaling itself also has no proof yet.

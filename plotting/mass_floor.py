@@ -75,30 +75,25 @@ def main():
     # the full distribution, faintly
     allx = np.concatenate([np.full(len(byn[n]), n) for n in ns])
     ally = np.concatenate([byn[n] for n in ns])
-    ax.scatter(allx, ally, s=1.0, c="#9bb7d4", alpha=0.18, linewidths=0, rasterized=True,
-               zorder=1, label=f"every cusp ({len(ally):,})")
+    ax.scatter(allx, ally, s=1.0, c="#9bb7d4", alpha=0.18, linewidths=0, rasterized=True, zorder=1)
     # per-n statistics are separate values, not a continuous curve: draw them as points
-    ax.plot(ns, med, lw=3.0, color="#2b5d8a", zorder=3, label="median over each n")
-    ax.scatter(ns, p1, s=9, c="#e08b2d", linewidths=0, alpha=0.85, rasterized=True, zorder=4,
-               label="1st percentile over each n")
-    ax.scatter(ns, mn, s=9, c="#c1272d", linewidths=0, alpha=0.85, rasterized=True, zorder=5,
-               label="minimum over each n")
+    ax.plot(ns, med, lw=3.0, color="#2b5d8a", zorder=3)
+    ax.scatter(ns, p1, s=9, c="#e08b2d", linewidths=0, alpha=0.85, rasterized=True, zorder=4)
+    ax.scatter(ns, mn, s=9, c="#c1272d", linewidths=0, alpha=0.85, rasterized=True, zorder=5)
     # running lower envelope of the minimum
     env = np.minimum.accumulate(mn)
-    ax.plot(ns, env, lw=3.5, color="#7a1216", ls="--", zorder=6,
-            label="running minimum (lower envelope)")
+    ax.plot(ns, env, lw=3.5, color="#7a1216", ls="--", zorder=6)
     if len(en):
         ax.scatter(en, emn, s=700, marker="D", c="#c1272d", edgecolors="black", linewidths=2.5,
-                   zorder=7, label="minimum, n = 4000…8000 (Parquet dumps)")
+                   zorder=7)
         ax.scatter(en, ep1, s=700, marker="D", c="#e08b2d", edgecolors="black", linewidths=2.5,
-                   zorder=7, label="1st percentile, n = 4000…8000")
+                   zorder=7)
     # the BULK follows n^-1/2 cleanly (log-log corr -1.00); the low tail does not follow anything
     m = ns >= a.fit_from
     em, Am = np.polyfit(np.log(ns[m]), np.log(med[m]), 1)
     xf = np.array([a.fit_from, 8000.0])
     ax.plot(xf, np.exp(Am)*xf**em, lw=3, color="black", ls=":", zorder=8,
-            label=f"fit to the median:  $f \\sim {np.exp(Am):.2f}\\,n^{{{em:.2f}}}$  (log-log corr "
-                  f"{np.corrcoef(np.log(ns[m]), np.log(med[m]))[0,1]:.2f}) -- the $1/\\sqrt{{n}}$ of the masses")
+            )
     e, A = np.polyfit(np.log(ns[m]), np.log(mn[m]), 1)
     rmin = np.corrcoef(np.log(ns[m]), np.log(mn[m]))[0,1]
     lo = np.array([byn[n].min() for n in ns]).min()
@@ -123,7 +118,21 @@ def main():
     ax.tick_params(length=6, width=1.2, which="minor")
     ax.grid(True, which="major", alpha=0.28, lw=1.2)
     ax.grid(True, which="minor", alpha=0.12, lw=0.8)
-    ax.legend(fontsize=27, loc="lower left", framealpha=0.93, markerscale=4)
+    from matplotlib.lines import Line2D
+    dot = lambda c, l, ms=13: Line2D([], [], marker="o", ls="", ms=ms, mfc=c, mec=c, label=l)
+    handles = [dot("#9bb7d4", f"every cusp ({len(ally):,})", 11),
+               Line2D([], [], lw=3.0, color="#2b5d8a", label="median over each n"),
+               dot("#e08b2d", "1st percentile over each n"),
+               dot("#c1272d", "minimum over each n"),
+               Line2D([], [], lw=3.5, ls="--", color="#7a1216", label="running minimum (lower envelope)"),
+               Line2D([], [], marker="D", ls="", ms=15, mfc="#c1272d", mec="black", mew=1.8,
+                      label="minimum, n = 4000…8000 (Parquet)"),
+               Line2D([], [], marker="D", ls="", ms=15, mfc="#e08b2d", mec="black", mew=1.8,
+                      label="1st percentile, n = 4000…8000"),
+               Line2D([], [], lw=3, ls=":", color="black",
+                      label=f"fit to the median:  $f \\sim {np.exp(Am):.2f}\\,n^{{{em:.2f}}}$   "
+                            f"(corr {np.corrcoef(np.log(ns[m]), np.log(med[m]))[0,1]:.2f})")]
+    ax.legend(handles=handles, fontsize=27, loc="lower left", framealpha=0.93)
     os.makedirs(a.out, exist_ok=True)
     path = os.path.join(a.out, "cusp_mass_floor.png")
     fig.savefig(path, dpi=dpi, bbox_inches="tight")
