@@ -322,3 +322,17 @@ If it holds, the certification term largely disappears and a full run to n<=5000
 dominated, roughly 15 h instead of 3.2 days.  Validation is cheap and direct: for every tie point the
 new trigger drops that the old rule flagged, certify anyway and confirm the verdict is unchanged --
 34,789 such cases exist for n<=2000.
+
+### 2026-09-21 (Claude Code): cusp tables extended to n<=3000
+- Run finished in 2 h 25 m on 8 workers (predicted ~3 h; the faster certify() accounts for the gap).
+- n<=3000 complete: 1,591,532 cusps, 17,081 with F3<0 (1.07%), 0 UNRESOLVED.  The new range
+  n=2001..3000 contributed 884,115 cusps and 9,442 with F3<0, so the F3<0 rate is flat.
+- The n<=2000 portion is unchanged, byte-identical to the archived version.
+- Interval checks: 195,243 total, of which 160,454 are new (n=2001..3000) -- about 160 per n against
+  77 at n=2000, following the n^3.45 growth.  Of those 160,454, only 25 were cusps: 99.98% of the
+  mpmath work now goes into confirming NON-cusps, which is exactly what the sharpened trigger in the
+  previous entry would remove.
+- No stale duplicate files appeared this time, confirming that moving the project out of ~/Documents
+  fixed the iCloud restore hazard that nearly corrupted the previous merge.
+- analyze_cusps rerun: 44 interval-certified cusps overall (9 with F3<0); the closest cusp to E(1/2)
+  is still always in the first band (i+j=n+1) for every n<=3000, and min (E-E(1/2))*n = 0.0088.

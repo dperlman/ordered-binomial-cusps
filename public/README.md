@@ -5,7 +5,7 @@ Built by `make_public_data.py`; do not edit by hand.
 | file | what |
 |---|---|
 | `per_n_summary.csv` | one row per n: cusp counts, F3<0 counts, extremes, gap to E(1/2) |
-| `cusps_decade.csv` | every cusp for n = 100, 200, 500, 1000, 2000 |
+| `cusps_decade.csv` | every cusp for n = 100, 200, 500, 1000, 2000, 3000 |
 | `negF3_neighbors.csv` | every F3<0 cusp with nearest-cusp distance metrics |
 
 Columns of the cusp tables:

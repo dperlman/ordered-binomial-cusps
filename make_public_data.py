@@ -14,7 +14,7 @@ publication policy in CLAUDE.md.  Always regenerate with this script; never hand
 """
 import argparse, csv, os, shutil
 
-DECADE = (100, 200, 500, 1000, 2000)
+DECADE = (100, 200, 500, 1000, 2000, 3000)
 
 def main():
     ap = argparse.ArgumentParser()
