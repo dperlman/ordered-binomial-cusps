@@ -48,6 +48,21 @@ established in that conversation; "verified" means checked numerically with the 
    the other masses' curve rises steeply there (always just before a smooth local max).
 9. Q2 (2np* < i+j) is FALSE in general even with p*>1/2: smallest counterexample n=9,i=2,j=8.
    It holds for adjacent ties and generally for narrow ties, fails for wide ones.
+10. PROVED (externally, 2026-09-21; the user's colleagues -- ask the user for the paper): E has NO
+    smooth local minima.  Every local minimum of E(n,.) is at a tie point, i.e. is a cusp.  This
+    was previously listed above as a consequence of the numerically-verified concavity (fact 7);
+    it now stands on its own proof and no longer depends on fact 7.
+11. PROVED (here, 2026-09-21): no tie point is a local MAXIMUM -- there are no "anti-cusps".
+    E = n/2 + (1/2) sum_{k<l} |f_k - f_l|.  At a tie point of the pair (i,j) the only non-smooth
+    term is |f_i - f_j| = |g(p)| with g(p*) = 0 and g'(p*) != 0, and |g| has a CONVEX kink there:
+    its one-sided slopes are -|g'| and +|g'|.  So E'_+ - E'_- = D = (j-i) f(i)/(p* q*) > 0 at
+    every tie point (a multi-tie sums positive kinks, still > 0).  A local maximum would need
+    E'_- >= 0 >= E'_+, i.e. E'_+ <= E'_-, contradicting D > 0.  Hence every local maximum of E is
+    a smooth point.  With fact 10: local minima <=> tie points that are cusps; local maxima <=>
+    smooth points.  No concavity needed.  (D > 0 is also verified on every stored tie point.)
+    Consequence for the pipeline: nothing to add.  There is no anti-cusp to search for, no new
+    column or file, and the certification criterion S_- < 0 < S_+ already captures every extremum
+    that can sit at a tie point.
 
 ## 3. Numerical results on cusp points
 

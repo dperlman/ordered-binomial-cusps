@@ -8,8 +8,11 @@ approaches and the open questions.  Append new results to it (with the n-range t
 - The "ordered binomial" expectation is E(n,p) = sum_k w_k f_p(k), where w_k is the rank of f_p(k)
   among all n+1 masses in increasing order (0 = smallest).  Equivalently
   E(n,p) = sum_{k<l} max(f_k, f_l) = n/2 + (1/2) sum_{k<l} |f_k - f_l|.
-- E(n,p) is continuous, symmetric about p=1/2, concave on each interval between "tie points",
-  with convex kinks at tie points.  All local minima are at tie points.
+- E(n,p) is continuous, symmetric about p=1/2, concave on each interval between "tie points"
+  (numerical, n<=100), with convex kinks at tie points.  PROVED: all local minima are at tie points
+  (external paper, via the user) and no tie point is a local maximum (the kink is convex, so
+  E'_+ - E'_- = D > 0; RESEARCH_LOG.md section 2, facts 10-11).  So there are no "anti-cusps" to
+  look for.  NOT proved: that there are no cusps above p ~ 0.66 (observed max cusp p* = 0.657).
 - A tie point p*(n,i,j), 0<=i<j<=n, is the p at which f_p(i)=f_p(j):
   rho = p*/(1-p*) = (C(n,i)/C(n,j))^(1/(j-i)).  We only study i+j>n (p*>1/2) by symmetry.
   CONVENTION CHANGED 2026-09-21: it used to read 0<i<j<n, which silently dropped the pairs (i,n),
