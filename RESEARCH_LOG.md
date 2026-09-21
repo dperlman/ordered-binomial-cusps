@@ -537,3 +537,28 @@ E/n = p exactly and every n collapses onto the diagonal.  VERIFIED to machine pr
   a small f(i) hence a small kick, and can only be a cusp where E' is already within ~D of zero --
   i.e. just past a smooth maximum, which is exactly the "always close to another cusp / narrow
   near-mode tie" observation.  Not analysed further.
+
+### 2026-09-21 (Claude Code): the cusp mass floor is a rare-event statistic, not computation noise
+Asked whether the wild scatter in the per-n minimum cusp mass could be numerical.  It is not.
+- The 12 smallest-mass cusps in the whole n<=3000 table were recomputed at 60 digits with exact
+  binomials, no TINY and no recurrence.  All are genuine cusps; f(i) agrees to ~1e-12 relative and
+  S_- to ~1e-10 absolute.  Record: n=1075, (572,734), f = 6.562e-8.
+- They ARE close to the decision threshold, which is worth knowing: a cusp of mass f needs
+  |S_-| < kappa = (j-i) f, so f ~ 1e-7 forces |S_-| ~ 1e-5, within an order or two of MARGIN=1e-6.
+  The record case has |S_-| = 1.571e-6, only 1.6x MARGIN -- but its absolute error is 3.3e-11, so
+  the verdict still holds with ~5 digits to spare, and anything under MARGIN escalates anyway.
+  Across the whole table 91 cusps have |S_-| < 1e-5 and only 44 needed interval arithmetic.
+- WHY it scatters: kink_pos = S_-/kappa is UNIFORM on (-1,0) among cusps.  Decile counts at
+  n=500/1000/2000/3000 give chi2 = 1.7, 1.2, 1.4, 2.3 on 9 dof (5% critical value 16.9) -- as flat
+  as it is possible to look.  So "is this tie point a cusp?" behaves exactly like "does S_- land in
+  a window of width kappa", and since kappa is proportional to f, low-mass tie points are cusps with
+  probability proportional to their mass.  The per-n minimum is therefore a RECORD over ~n^2/4
+  trials with a probability that vanishes linearly in f, which is precisely the kind of extreme-value
+  statistic that scatters by orders of magnitude between neighbouring n.  Nothing to fix.
+- A predictive model falls out, and it is the right shape but not yet calibrated:
+  E[#cusps with mass < F] ~ sum over tie points with f<F of kappa/(spread of S_-).  With the IQR of
+  S_- as the spread it over-predicts by ~3-6x (n=1000: 9.4 predicted vs 3 observed at F=1e-4;
+  n=3000: 48.8 vs 8), because S_- is not uniformly spread over its IQR near zero -- the density of
+  tie points near a zero of E' is what actually matters.  Getting that density right would turn
+  the observed floor into a predicted distribution, and is the most promising route to a real
+  bound: not "prove f > c" but "P(a cusp with f < F exists at this n) < epsilon".
