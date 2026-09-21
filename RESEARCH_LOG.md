@@ -562,3 +562,33 @@ Asked whether the wild scatter in the per-n minimum cusp mass could be numerical
   tie points near a zero of E' is what actually matters.  Getting that density right would turn
   the observed floor into a predicted distribution, and is the most promising route to a real
   bound: not "prove f > c" but "P(a cusp with f < F exists at this n) < epsilon".
+
+### 2026-09-21 (Claude Code): cusps ARE the upward zero crossings of E'
+Pursuing the density of S_- near zero, to calibrate the low-mass cusp model.  The density framing
+turned out to be the wrong picture, and the right one is exact:
+- E' DECREASES between tie points and jumps UP by D at each one (fact 11).  Therefore E' can only
+  cross zero upward AT a tie point, and such a tie is by definition a cusp; it can only cross zero
+  downward BETWEEN tie points, which is a smooth local maximum of E.  Cusps and smooth maxima
+  strictly alternate.
+- VERIFIED exactly: cusps == upward crossings, 181/181 at n=500, 352/352 at n=1000, 1061/1061 at
+  n=3000; downward crossings number one fewer each time (E' starts negative just above p=1/2 and
+  ends positive).  E'_-(t+1) <= E'_+(t) at all but 1 of 2,247,000 consecutive pairs at n=3000.
+- So the cusp COUNT is structural -- the number of oscillations of E' about zero -- not a matter of
+  chance.  That explains why the earlier "probability that S_- lands in a window of width kappa"
+  model over-predicted by a steady ~2.9x: consecutive tie points can all satisfy E'_- in (-D,0),
+  but only the crossing is a cusp.  The uniformity of kink_pos (previous entry) is a statement
+  about WHERE in the jump the crossing falls, which is a different and still-open question.
+- The crossing is size-biased toward large D: the first tie whose jump carries E' over zero wins, so
+  cusps have median D = 1.88 while typical tie points have D astronomically smaller.  A LOW-mass
+  cusp requires E'_- to have arrived within D of zero already.
+- Modelling the per-n minimum D as Exponential (linear tail, independent crossings) FAILS: the
+  probability-integral transform over n=200..3000 gives chi2 = 174 on 9 dof (5% critical 16.9),
+  skewed so that observed minima are consistently LARGER than predicted.
+- The reason is that the low-D "tail" is not a tail at all but a SECOND POPULATION, and it is
+  exactly the F3<0 cusps.  Pooled over n<=3000: F3<0 cusps have D in [0.0000, 0.0816] with median
+  0.0476; F3>0 cusps have D in [0.0267, 2.0913] with median 1.8828.  Every cusp with D<0.05 is F3<0
+  (9118 of 9119), and the two groups barely overlap.  Fitted tail: count(D<D0) ~ D0^1.14 for the
+  F3<0 group, not the D0^1.00 a uniform-arrival model predicts.
+- So the mass floor is set by the F3<0 population specifically, and a usable probabilistic bound
+  needs that population's own structure -- not a generic crossing argument.  That ties the floor
+  question directly to the open F3-sign question rather than being independent of it.
