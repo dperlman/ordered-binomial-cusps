@@ -2,12 +2,19 @@
 
 Tools and certified data for the **ordered binomial expectation**
 
-$$E(n,p) = \sum_{k=0}^{n} w_k f_p(k) \qquad \text{where} \qquad f_p(k) = \binom{n}{k} p^k (1-p)^{n-k}$$
+$$
+E(n,p) = \sum_{k=0}^{n} w_k f_p(k)
+\qquad \text{where} \qquad
+f_p(k) = \binom{n}{k} p^k (1-p)^{n-k}
+$$
 
 and `w_k` is the **rank** of the mass `f_p(k)` among all `n+1` masses, smallest = 0. Equivalently,
 and without any sorting:
 
-$$E(n,p) = \sum_{k<l} \max(f_k, f_l) = \frac{n}{2} + \frac{1}{2} \sum_{k<l} |f_k - f_l|$$
+$$
+E(n,p) = \sum_{k \lt l} \max(f_k, f_l)
+       = \frac{n}{2} + \frac{1}{2} \sum_{k \lt l} \lvert f_k - f_l \rvert
+$$
 
 Because the ranking changes as `p` moves, `E(n,.)` is a piecewise-smooth curve: concave on each
 piece, with a convex **kink** wherever two masses swap order. Those crossings are the **tie points**
