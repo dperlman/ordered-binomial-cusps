@@ -32,7 +32,7 @@ approaches and the open questions.  Append new results to it (with the n-range t
   written twice, and the two E_half versions had already drifted apart (500x different error at
   n=2000).  numpy + numba + mpmath only, so the certified numerics stay auditable.
 - _one_tie() is the single place masses and ranks are computed; tie_kernel loops it and evaluate()
-  calls it once.  Masses are ALWAYS normalised by their own sum (see RESEARCH_LOG section 7): E then
+  calls it once.  Masses are ALWAYS normalised by their own sum (see RESEARCH_LOG section 7, data architecture): E then
   matches a 60-digit computation to ~2e-13, and E - E(1/2) carries ~7.4 digits at n=2000 instead of
   ~3.6.  tie_kernel's one flag is collect_all: False returns only MIN/CHECK tie points, True returns
   every tie point.  There is deliberately NO flag for reproducing the older unnormalised output --
@@ -61,7 +61,7 @@ approaches and the open questions.  Append new results to it (with the n-range t
   only the cusp-to-cusp distance columns are cusp-specific.
 - cusps_data.py: reader for those datasets; derives width, band, w_i, f_i, T, A, V, all the slopes,
   D and the gap columns.  Use it rather than recomputing -- it encodes two numerical rules
-  (normalised masses, and never subtracting S_plus-S_minus).  See RESEARCH_LOG.md section 7.
+  (normalised masses, and never subtracting S_plus-S_minus).  See RESEARCH_LOG.md section 7 (data architecture).
 - analyze_cusps.py (numpy only): analyses straight off cusps_all.csv; writes analysis/.
 - Cusp decisions are certified (double-precision screen with margin 1e-6, mpmath interval
   arithmetic for borderline cases).  Descriptive columns (E, F3, slopes) are double precision.
@@ -85,7 +85,7 @@ approaches and the open questions.  Append new results to it (with the n-range t
 
 ## Status
 - Cusp tables complete for n<=2000 (cusps_n2000.csv.gz).  Results, counts and timings are in
-  RESEARCH_LOG.md section 7.
+  RESEARCH_LOG.md section 7 (data architecture).
 
 ## Data publication policy (three tiers) -- keep to this
 The public repo is github.com/dperlman/ordered-binomial-cusps.  Generated data is large and

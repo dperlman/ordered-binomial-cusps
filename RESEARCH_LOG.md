@@ -107,8 +107,10 @@ PROMISING (the main reduction):
 ## 5. Open questions / next steps
 
 - Prove (★), starting with the first-switch case.
-- Extend cusp tables to n<=5000 (running); check whether negative-F3 cusps remain "close" and
-  whether max cusp p* stays ~0.65.
+- Extend cusp tables to n<=5000; check whether negative-F3 cusps remain "close" and whether max
+  cusp p* stays ~0.65.  (n<=2000 done; tie-point dumps exist at n=3000,4000,5000.)
+- Decide on the sharpened CHECK trigger (last entry in section 8): prototyped, 99% reduction with
+  0 disagreements at n<=1000, but the error constants are not yet derived and it is NOT in use.
 - Quantify cusp "depth" (dip height before the nearest smooth max) for all cusps; conjecture:
   negative-F3 cusps are the shallowest.
 - Prove piecewise concavity of E (fact 7 above is numerical).
@@ -118,7 +120,7 @@ PROMISING (the main reduction):
 
 - cusps_fast.py: the generator (numba); its docstring has the definitions and method.  The older numpy
   script cusps_parallel.py was removed 2026-09-18 after cusps_fast.py reproduced all of its n<=1000
-  output byte for byte (see section 7).
+  output byte for byte (see section 8).
 - cusps/nNNNNN.csv: per-n results; cusps/interval_checks.log; merge with --merge [--split-mb --slim].
   cusps/cusps_all.csv = cusps_n2000.csv.gz (n<=2000); cusps_n1000.csv.gz (n<=1000).
 - Columns: n,i,j,pstar,E,F3,F3_sign,S_minus,S_plus,slope_left,slope_right,certified_by
@@ -176,7 +178,7 @@ F3 is the right-hand slope of T+V in units of u = f/(p*q*), NOT the slope of T:
 Verified against the certified table to 1.6e-13 relative over 3000 rows, and the slope jump
 E'_+ - E'_- = D to 6e-16.
 
-## 7. Log entries
+## 8. Log entries
 
 ### 2026-09-17/18 (Claude Code): cusp tables to n=2000
 - n<=2000 complete: 707,417 cusps (n<=1000: 176,816), 0 UNRESOLVED.  F3<0: 7,639 overall
@@ -285,3 +287,38 @@ E'_+ - E'_- = D to 6e-16.
   (c) E at the cusps is NOT monotone in p*: it fails at 1,963 of 1,997 n, with 52,206 of 705,420
       adjacent cusp pairs (7.4%) stepping downward.  The decreases are spread over the whole cusp
       range (p* 0.5006..0.6520, median 0.6057), not confined to an edge.
+
+### 2026-09-20 (Claude Code): feasibility of a sharpened CHECK trigger -- NOT IMPLEMENTED
+Prototype only (numpy, outside the kernel); nothing in the pipeline uses this yet.
+
+The CHECK trigger has two parts.  The margin test (|S_+-| within MARGIN=1e-6) is honest.  The
+near-tie test (two adjacent masses within relative GAP=1e-8) is a PROXY for "the ranking may be
+wrong", and it never asks whether a wrong ranking would matter.  Swapping adjacent ranks of masses
+a,b changes S_- by exactly f_a(a-np*) - f_b(b-np*) ~ f*(a-b): the damage scales with the SIZE of the
+masses, not with how close they are.  A near-tie between two masses at 1e-144 (which really does
+trigger certification today) perturbs S_- by ~1e-141 against an S_- of order 1e-2.
+
+Sharpened criterion: flag only when a computed bound on the total possible perturbation exceeds the
+distance of S_-/S_+ from zero.  Four terms, all per tie point: (1) summation rounding
+(n+1)*eps*sum|w_k f_k a_k|; (2) mass error delta_f*sum|w_k f_k a_k|; (3) error in p*, into both f_k
+and a_k; (4) re-ranking -- masses whose neighbouring order double precision cannot resolve are
+grouped into clusters, and within a cluster of size c any rank moves by at most c-1, giving
+(c-1)*sum_{k in C} f_k |a_k|.  This replaces BOTH MARGIN and GAP with computed quantities.
+
+Measured on the 1,601 logged checks with n<=1000: 16 still flagged, 1,585 decided in double
+precision, and ALL 1,585 agree with the certified verdict.  A 99.0% reduction with 0 disagreements.
+At n=1500 and n=2000, every single CHECK came from the near-tie proxy -- none from the margin.
+
+Three caveats before this can be trusted:
+- delta_f = 1e-11 and delta_p = 1e-12 are ASSERTED, conservative against a measured ~1e-15, not
+  derived.  Making them rigorous is the real remaining work.
+- Only tie points the old rule flagged were tested.  The other direction is untested: the new bound
+  CAN flag things the old rule decided (a near-mode cluster with f ~ 1e-2 and |a| ~ n gives a bound
+  ~10), so the check count could rise somewhere.  Needs measuring over all tie points, which the
+  numpy prototype is too slow to do (0.4 s per tie point).
+- Zero disagreements is necessary, not sufficient; correctness rests on the error analysis above.
+
+If it holds, the certification term largely disappears and a full run to n<=5000 becomes screening-
+dominated, roughly 15 h instead of 3.2 days.  Validation is cheap and direct: for every tie point the
+new trigger drops that the old rule flagged, certify anyway and confirm the verdict is unchanged --
+34,789 such cases exist for n<=2000.
