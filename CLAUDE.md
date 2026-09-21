@@ -27,10 +27,14 @@ approaches and the open questions.  Append new results to it (with the n-range t
   before this existed the mass recurrence, the rank merge, the F3 formula and E_half were each
   written twice, and the two E_half versions had already drifted apart (500x different error at
   n=2000).  numpy + numba + mpmath only, so the certified numerics stay auditable.
-- tie_kernel has two flags.  normalise=False reproduces the historical output bit-for-bit and is
-  what cusps_fast.py uses; normalise=True divides the masses by their own sum (better E, see
-  RESEARCH_LOG section 7) and is what dump_ties.py uses.  collect_all=False returns only MIN/CHECK
-  tie points, True returns every tie point.
+- _one_tie() is the single place masses and ranks are computed; tie_kernel loops it and evaluate()
+  calls it once.  Masses are ALWAYS normalised by their own sum (see RESEARCH_LOG section 7): E then
+  matches a 60-digit computation to ~2e-13, and E - E(1/2) carries ~7.4 digits at n=2000 instead of
+  ~3.6.  tie_kernel's one flag is collect_all: False returns only MIN/CHECK tie points, True returns
+  every tie point.  There is deliberately NO flag for reproducing the older unnormalised output --
+  flags that exist only to preserve a less accurate calculation were removed on 2026-09-20; files
+  written before then differ in the last digits of E and the slope numerators, so regenerate rather
+  than mixing them.
 - cusps_fast.py: the certified generator (CLI, parallel driver, per-n CSV, merge, recheck).  Parallel, resumable generator of all cusp points up to
   --nmax; its docstring holds the definitions, method, column list and history.
   Run: python cusps_fast.py --nmax 2000 --workers 8 --out cusps/  then  --merge --out cusps/.

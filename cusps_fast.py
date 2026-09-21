@@ -25,7 +25,7 @@ Method
   come from the recurrence f_{k+1} = f_k * rho * (n-k)/(k+1) outward from the mode, the ranks from a
   two-pointer merge of the increasing left run and the decreasing right run (unimodality), then S_-
   and S_+.  No sorting, O(n) per tie point, O(n) memory.  Masses below TINY are set to zero.
-  This script screens with normalise=False, which is what every existing cusps/ file was built with.
+  The masses are always normalised by their own sum; see binom_core.py for why.
   A tie point is accepted in double precision if S_- < -MARGIN and S_+ > MARGIN (or rejected if
   clearly the other way).  It is instead re-certified with 50/100/200-digit interval arithmetic
   (mpmath.iv) if it is within MARGIN of a decision boundary, or if two adjacent masses in the
