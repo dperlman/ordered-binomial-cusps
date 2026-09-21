@@ -10,7 +10,10 @@ established in that conversation; "verified" means checked numerically with the 
 - Ranks: w_k = rank of f_p(k) among the n+1 masses in increasing order, 0 = smallest.
 - Ordered-binomial expectation:  E(n,p) = sum_k w_k f_p(k).
 - G(p) = sum_{0<=k<l<=n} |f_p(k) - f_p(l)|.   Then  G = 2E - n.
-- Tie point of the pair (i,j), 0<i<j<n:  p*(n,i,j) = the p with f_p(i)=f_p(j):
+- Tie point of the pair (i,j), 0<=i<j<=n:  p*(n,i,j) = the p with f_p(i)=f_p(j):
+  [Convention widened 2026-09-21 from 0<i<j<n; see the section 8 entry of that date.  The pairs
+  (i,n) are real tie points with p*>1/2; the last of them, (n-1,n), sits at p*=n/(n+1), above
+  which E = n p exactly.]
       rho := p*/(1-p*) = ( C(n,i)/C(n,j) )^(1/(j-i)).
   By symmetry p <-> 1-p, (i,j) <-> (n-j,n-i), only i+j>n (p*>1/2) is studied.
 - F3(n,i,j) = (n+i-j)(i+j-2np*) + (j-np*).   (Question (3) of the original note, with w_i = n+i-j.)
@@ -109,10 +112,10 @@ PROMISING (the main reduction):
 - Prove (★), starting with the first-switch case.
 - Extend cusp tables to n<=5000; check whether negative-F3 cusps remain "close" and whether max
   cusp p* stays ~0.65.  (n<=2000 done; tie-point dumps exist at n=3000,4000,5000.)
-- Decide whether the tie-point convention should widen from 0<i<j<n to 0<=i<j<=n (section 8,
-  2026-09-21).  The pairs (i,n) are real tie points with p*>1/2 and are currently excluded; they
-  contain no cusps for n>=4, but they are missing from the tie-point datasets, and the true last
-  tie point p*=n/(n+1) -- above which E = n p exactly -- is among them.
+- DECIDED 2026-09-21: the tie-point convention is 0<=i<j<=n.  The kernel (cusps_fast.py,
+  dump_ties.py) still implements j<n and must be updated, then the Parquet dumps rebuilt and the
+  tie-point release re-issued; n=3's cusp (1,3) added.  Sequenced after the performance work so
+  that work can be validated byte-for-byte first.
 - Decide on the sharpened CHECK trigger (section 8): prototyped, 99% reduction with 0 disagreements
   at n<=1000, but the error constants are not yet derived and it is NOT in use.
 - Conjecture (section 8, 2026-09-21): a cusp's pair mass f(i) is bounded below, ~1e-7 for n<=3000.

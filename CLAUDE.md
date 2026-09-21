@@ -10,8 +10,18 @@ approaches and the open questions.  Append new results to it (with the n-range t
   E(n,p) = sum_{k<l} max(f_k, f_l) = n/2 + (1/2) sum_{k<l} |f_k - f_l|.
 - E(n,p) is continuous, symmetric about p=1/2, concave on each interval between "tie points",
   with convex kinks at tie points.  All local minima are at tie points.
-- A tie point p*(n,i,j), 0<i<j<n, is the p at which f_p(i)=f_p(j):
+- A tie point p*(n,i,j), 0<=i<j<=n, is the p at which f_p(i)=f_p(j):
   rho = p*/(1-p*) = (C(n,i)/C(n,j))^(1/(j-i)).  We only study i+j>n (p*>1/2) by symmetry.
+  CONVENTION CHANGED 2026-09-21: it used to read 0<i<j<n, which silently dropped the pairs (i,n),
+  i=1..n-1 -- real order changes with p*>1/2 (their mirrors (0,j) sit below 1/2, so the symmetry
+  restriction does not remove them).  The true last tie point is (n-1,n) at p*=n/(n+1); above it
+  every mass is in natural order and E = n p exactly, so E/n = p.  Those pairs hold no cusps for
+  n>=4 (the common mass there is p*^n, far below the cusp mass floor), so cusps_all.csv is sound
+  for n>=4; n=3 has one cusp, pair (1,3), that the old range never produced.
+  STATUS: cusps_fast.py and dump_ties.py still implement the OLD range (j<n) until the kernel is
+  next touched; the tie-point Parquet dumps are therefore missing n-1 rows per n.  The kernel
+  change is deliberately sequenced AFTER the pending performance work, so that work can still be
+  validated byte-for-byte against the current data.
 - A "cusp point" is a tie point that is a local minimum of E(n,.).  Test: with the left-side
   ranking (w_j = w_i - 1), S_- = sum_k w_k f(k)(k - n p*) and S_+ = S_- + (j-i) f(i);
   cusp <=> S_- < 0 < S_+.  One-sided slopes are E'_± = S_± / (p* (1-p*)).
@@ -84,7 +94,9 @@ approaches and the open questions.  Append new results to it (with the n-range t
   per-n files and the interval-check log were byte-identical to the old script's output.
 
 ## Status
-- Cusp tables complete for n<=3000 (cusps_n3000.csv.gz): 1,591,532 cusps, 0 UNRESOLVED.
+- Cusp tables complete for n<=3000 (cusps_n3000.csv.gz): 1,591,532 cusps, 0 UNRESOLVED.  Complete
+  under the widened convention too for n>=4 (see Background); n=3's single cusp is absent.
+- Tie-point Parquet dumps use the old j<n range and are missing the (i,n) rows -- rebuild pending.
 - Tie-point Parquet dumps exist for n = 100, 200, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000
   (schema v3: row 0 of each is the p=1/2 symmetry axis; see RESEARCH_LOG.md section 8).
 - Results, counts and timings are in RESEARCH_LOG.md section 8 (log entries).
