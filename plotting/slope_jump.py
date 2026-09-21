@@ -87,7 +87,8 @@ def main():
             f"min D among cusps = 10^{log10D[cusp].min():.2f}",
             transform=ax.transAxes, ha="right", fontsize=24, color="0.35")
     os.makedirs(a.out, exist_ok=True)
-    tag = ('_linear' if a.linear else '') + (f'_p{a.pmax:g}' if a.pmax is not None else '')
+    tag = (('_linear' if a.linear else '') + (f'_p{a.pmax:g}' if a.pmax is not None else '')
+           + ('_lines' if a.connect else ''))
     path = os.path.join(a.out, f"slope_jump_n{a.n:05d}{tag}.png")
     fig.savefig(path, dpi=dpi, bbox_inches="tight"); plt.close(fig)
     print(f"{path}  ({os.path.getsize(path)/1e6:.1f} MB)   log10 D: min {log10D[o].min():.1f}, "

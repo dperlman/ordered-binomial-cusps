@@ -515,3 +515,25 @@ E/n = p exactly and every n collapses onto the diagonal.  VERIFIED to machine pr
   true D is small -- i.e. the negatives should sit on low-mass tie points and never on cusps.
   If instead the negatives appear on the envelope or at cusps, the old code computes something
   else and needs reading.
+
+### 2026-09-21 (Claude Code): the cusps with a tiny slope jump ARE the F3<0 cusps
+- In the linear slope-jump plots (plotting/slope_jump.py --linear --pmax 0.7 --no-axis) the cusps
+  of n=3000 trace one smooth curve in D from ~1.9 near p*=1/2 down to ~0 at p*=0.652, EXCEPT a
+  handful sitting near the floor at D ~ 0.03-0.08.  Investigated as possible computation errors.
+- They are genuine.  Independent 50-digit check (exact binomials, no TINY, no recurrence, both
+  rankings built directly): E'_- < 0 < E'_+ and D agree with the double result to 5 digits, and
+  E(p*) is a local minimum by finite differences at steps 1e-10..1e-12.  (A first attempt with
+  step 1e-7 wrongly said "not a minimum": at n=3000 the tie points are ~2e-7 apart, so that step
+  crosses other tie points and measures nothing local.  Recorded so nobody repeats it.)
+- Two populations among the 13 cusps of n=3000 with D < 0.2:
+    11 are the F3<0 cusps: WIDE ties, j-i ~ 165-186, band i+j-n ~ 630-910, pair mass
+       f(i) ~ 3.6e-5 .. 1.1e-4, F3 ~ -1700 .. -2000.  Every F3<0 cusp at n=3000 has D < 0.079,
+       against a median D of 1.88 for F3>0 cusps (width median 43, f(i) median 1.1e-2).
+     2 are the opposite: the NARROWEST possible ties, j-i = 1 and 2, at the very top of the cusp
+       range (p* = 0.6519, 0.6521; max cusp p* is 0.65212).  Big mass (1.5e-2) but D is small
+       because D = (j-i) f/(p*q*) and j-i is 1 or 2.
+- So "F3<0 cusp" and "cusp with a tiny kink" are the same set, up to the two edge ties.  This
+  matches section 3 (F3<0 cusps are shallow dips of wide ties) from the slope side: a wide tie has
+  a small f(i) hence a small kick, and can only be a cusp where E' is already within ~D of zero --
+  i.e. just past a smooth maximum, which is exactly the "always close to another cusp / narrow
+  near-mode tie" observation.  Not analysed further.
