@@ -20,6 +20,10 @@ def main():
     ap.add_argument("--data", default="data"); ap.add_argument("--out", default="plots")
     ap.add_argument("--width", type=int, default=10000); ap.add_argument("--height", type=int, default=6000)
     ap.add_argument("--cmin", type=float, default=-30)
+    ap.add_argument("--color", choices=["mass", "mass-auto", "width"], default="mass",
+                    help="mass: log10 f(i) over [cmin,0]; mass-auto: log10 f(i) with the range fitted "
+                         "to the VISIBLE points (1st-99th percentile of those with D > 1%% of max); "
+                         "width: log10 (j-i)")
     ap.add_argument("--linear", action="store_true", help="plot D itself instead of log10 D")
     ap.add_argument("--pmax", type=float, default=None, help="keep only tie points with p* <= pmax")
     ap.add_argument("--no-axis", action="store_true", help="leave out the p=1/2 axis row")
@@ -41,7 +45,20 @@ def main():
     p = d['pstar']; w = d['j'].astype(float) - d['i'].astype(float)
     log10D = (np.log(w) + d['ln_fi'] - np.log(p*(1-p)))/np.log(10)    # exact, no underflow
     x = d['rank_in_n'].astype(float)
-    col = np.clip(d['ln_fi']/np.log(10), a.cmin, 0.0); norm = Normalize(vmin=a.cmin, vmax=0.0)
+    if a.color == "width":
+        col = np.log10(w); norm = Normalize(vmin=0.0, vmax=np.log10(w[o].max()))
+        clabel = r"$\log_{10}(j-i)$  (width of the tie)"
+    elif a.color == "mass-auto":
+        lf = d['ln_fi']/np.log(10)
+        Dlin = 10.0**log10D
+        vis = o & (Dlin > 0.01*Dlin[o].max())
+        lo_, hi_ = np.percentile(lf[vis], [1, 99])
+        col = np.clip(lf, lo_, hi_); norm = Normalize(vmin=lo_, vmax=hi_)
+        clabel = (r"$\log_{10} f(i)$, range fitted to the visible points "
+                  f"[{lo_:.1f}, {hi_:.1f}]; outside is clamped")
+    else:
+        col = np.clip(d['ln_fi']/np.log(10), a.cmin, 0.0); norm = Normalize(vmin=a.cmin, vmax=0.0)
+        clabel = r"$\log_{10} f(i)$  (pair mass at the tie; $\leq$ %d clamped)" % a.cmin
 
     dpi = 100
     fig, ax = plt.subplots(figsize=(a.width/dpi, a.height/dpi), dpi=dpi)
@@ -71,11 +88,12 @@ def main():
     sec.set_xticks(ticks); sec.set_xticklabels([f"{p[t]:.4f}" for t in ticks])
     sec.set_xlabel("$p^*$ at that index", fontsize=30, labelpad=18); sec.tick_params(labelsize=24)
     rng = f" with $p^* \\leq {a.pmax:g}$" if a.pmax is not None else ""
-    ax.set_title(f"Slope jump at the {int(o.sum()):,} tie points of n={a.n}{rng}, coloured by pair mass   "
+    cname = {"mass": "pair mass", "mass-auto": "pair mass (range fitted)", "width": "tie width j-i"}[a.color]
+    ax.set_title(f"Slope jump at the {int(o.sum()):,} tie points of n={a.n}{rng}, coloured by {cname}   "
                  f"(every value is positive: fact 11)", fontsize=44, pad=32)
     ax.tick_params(labelsize=26, length=12, width=2); ax.grid(True, alpha=0.22, lw=1.2)
     cb = fig.colorbar(sc, ax=ax, pad=0.012, fraction=0.025)
-    cb.set_label(r"$\log_{10} f(i)$  (pair mass at the tie; $\leq$ %d clamped)" % a.cmin, fontsize=30, labelpad=18)
+    cb.set_label(clabel, fontsize=30, labelpad=18)
     cb.ax.tick_params(labelsize=24)
     handles = [Line2D([], [], marker="o", ls="", ms=14, mfc="none", mec="#d1495b", mew=2,
                       label=f"cusp ({int(cusp.sum())})"),
@@ -88,7 +106,7 @@ def main():
             transform=ax.transAxes, ha="right", fontsize=24, color="0.35")
     os.makedirs(a.out, exist_ok=True)
     tag = (('_linear' if a.linear else '') + (f'_p{a.pmax:g}' if a.pmax is not None else '')
-           + ('_lines' if a.connect else ''))
+           + ('_lines' if a.connect else '') + {"mass": "", "mass-auto": "_cmassauto", "width": "_cwidth"}[a.color])
     path = os.path.join(a.out, f"slope_jump_n{a.n:05d}{tag}.png")
     fig.savefig(path, dpi=dpi, bbox_inches="tight"); plt.close(fig)
     print(f"{path}  ({os.path.getsize(path)/1e6:.1f} MB)   log10 D: min {log10D[o].min():.1f}, "
