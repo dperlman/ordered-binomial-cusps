@@ -389,3 +389,16 @@ new trigger drops that the old rule flagged, certify anyway and confirm the verd
   on each piece -- unproved, fact 7 is numerical -- and (b) control of how close tie points p*(n,i,j)
   can sit to the zeros of E', a spacing/Diophantine question with no theorem behind it.  So this is
   a RESEARCH item (an open conjecture worth stating), not an engineering one.  Not implemented.
+
+### 2026-09-21 (Claude Code): slope plot at n=1000 (plotting/slope_plot.py)
+- E'_- and E'_+ at all 249,001 tie points, two dots per p*, no lines, coloured by log10 f(i).
+  Both x = p* and x = index versions; 10000x6000.
+- What it shows: E' at tie points fills a band that fans out from the antisymmetric pair
+  E' = -/+25.23 at the p=1/2 axis, spans roughly [-25, +25] near p=1/2, and lifts entirely above
+  zero at p ~ 0.65 -- which is exactly where the cusps stop (max cusp p* = 0.6519 at n=1000).  Past
+  that no kick can reach zero.  Toward p -> 1, E' grows to ~640 because p*q* -> 0.
+- For 83% of tie points the two dots are within one pixel (kink below resolution); the visible gaps
+  are the kinks, and the cusps are the 352 pairs whose gap straddles zero.
+- Pair mass vs width at n=1000: corr(ln f, width) = -0.947, corr(ln f, -width^2/(8npq)) = +0.998,
+  i.e. ln f ~ c - (j-i)^2/(8 n p* q*): "nearby swap = larger mass" holds with width measured in
+  standard deviations sqrt(npq), which shrink toward p=1.  corr(ln f, ln kappa) = 1.000.
