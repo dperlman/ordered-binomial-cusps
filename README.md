@@ -91,3 +91,7 @@ python3 -m venv .venv                       # use a native arm64 Python on Apple
 
 Generated data is **not** committed — it is large and reproducible, and every ignored path has its
 rebuild command in [`.gitignore`](.gitignore).
+
+## License
+
+MIT — see [`LICENSE`](LICENSE). The datasets in the releases are covered by the same terms.
