@@ -29,7 +29,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import cusps_data as cd
 
 def indicator(d):
-    """(sign(u), ln|u|) with u = S_-/kappa, via ln_fi so kappa may underflow.  Cusp <=> -1<u<0."""
+    """(sign, ln|kink_pos|) with kink_pos = S_-/kappa, via ln_fi so kappa may underflow.
+
+    cusps_data gives kink_pos directly, but it overflows to +-inf where kappa underflows, so the
+    magnitude is rebuilt in log space here purely so the display cap can be applied.
+    """
     ln_kappa = np.log(d['j'].astype(float) - d['i'].astype(float)) + d['ln_fi']
     s = d['S_minus']
     with np.errstate(divide='ignore'):
@@ -61,17 +65,24 @@ def main():
     dpi = 100
     fig, ax = plt.subplots(figsize=(a.width/dpi, a.height/dpi), dpi=dpi)
     ax.axhline(0, color="0.35", lw=3, zorder=1)
+    axis = d.get("is_axis", np.zeros(len(x), bool))
     ax.axhspan(-1, 0, color="#d1495b", alpha=0.10, zorder=0)
     ax.scatter(x[~cusp], u[~cusp], s=1.5, c="#3b6ea8", alpha=0.35, linewidths=0,
                rasterized=True, zorder=2, label=f"tie points ({int((~cusp).sum()):,})")
-    ax.scatter(x[cusp], u[cusp], s=90, c="#d1495b", linewidths=0,
-               zorder=3, label=f"cusp points ({int(cusp.sum()):,})")
+    ax.scatter(x[cusp & ~axis], u[cusp & ~axis], s=90, c="#d1495b", linewidths=0,
+               zorder=3, label=f"cusp points ({int((cusp & ~axis).sum()):,})")
+    if axis.any():
+        ax.scatter(x[axis], u[axis], s=900, marker="*", c="#f0a202", edgecolors="#6b4500",
+                   linewidths=3, zorder=4,
+                   label=r"$p=1/2$ axis: all $\lfloor n/2\rfloor$ mirror pairs tie, $S_-=-S_+$")
+        ax.axhline(-0.5, color="#f0a202", lw=2, ls=":", zorder=1)
     ax.set_yscale("symlog", linthresh=1.0, linscale=3.0)
     ax.set_ylim(-a.cap*1.3, a.cap*1.3)
     ax.set_xlim(-0.005*len(x), 1.005*len(x))
-    ax.set_xlabel("tie-point index, ordered by $p^*$ (0 = first tie point above 1/2)", fontsize=34, labelpad=25)
-    ax.set_ylabel(r"$u=S_-/\kappa$   (position of zero within the slope jump)"
-                  "\n" r"cusp $\Leftrightarrow\ -1<u<0$  (shaded)", fontsize=34, labelpad=25)
+    ax.set_xlabel("tie-point index, ordered by $p^*$ (0 = the $p=1/2$ axis itself)", fontsize=34, labelpad=25)
+    ax.set_ylabel(r"kink position  $S_-/\kappa$   (where zero falls in the slope jump)"
+                  "\n" r"cusp $\Leftrightarrow\ -1<S_-/\kappa<0$  (shaded);  $-1/2$ = dead centre",
+                  fontsize=34, labelpad=25)
     ax.set_title(f"Cusp indicator across all {len(x):,} tie points of n={a.n}   "
                  f"(p* from {d['pstar'].min():.6f} to {d['pstar'].max():.6f})", fontsize=44, pad=35)
     ax.tick_params(labelsize=26, length=12, width=2)
@@ -90,7 +101,7 @@ def main():
     fig.savefig(path, dpi=dpi, bbox_inches="tight")
     print(f"{path}  ({os.path.getsize(path)/1e6:.1f} MB, {a.width}x{a.height})")
     print(f"  {len(x):,} tie points, {int(cusp.sum()):,} cusps; "
-          f"u at cusps in [{u[cusp].min():.4f}, {u[cusp].max():.4f}]; "
+          f"kink position at cusps in [{u[cusp].min():.4f}, {u[cusp].max():.4f}]; "
           f"cusps span index {x[cusp].min():,}..{x[cusp].max():,} "
           f"(p* {d['pstar'][cusp].min():.5f}..{d['pstar'][cusp].max():.5f})")
 

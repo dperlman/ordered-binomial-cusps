@@ -11,26 +11,29 @@ Only pstar, ln_fi, E_minus_Ehalf, S_minus, S_plus and F3 are stored; everything 
 here so the two can never drift apart.  Conventions follow RESEARCH_LOG.md:
 
     E = B + V,  B = A + T          B smooth backbone, V = (1/2)|f_j - f_i| the kink (V=0 at p*)
-    w_i = n+i-j = r,  f = f(i) = f(j) at p*,  u = f/(p* q*)
-    T(p*)  = (2r+1) f          V(p*) = 0          A(p*) = E - T
+    w_i = n+i-j = r,  f = f(i) = f(j) at p*,  slope_unit = f/(p* q*)
+    kink_pos = S_-/kappa   -- where zero falls inside the slope jump;  cusp <=> -1 < kink_pos < 0,
+               and kink_pos = -1/2 exactly on the p=1/2 axis row, by E(p) = E(1-p)
+    T(p*)  = (2r+1) f          V(p*) = 0          A(p*) = E - T   (all NaN on the axis row)
     slopes:  E'_- = S_minus/(p q)         E'_+ = S_plus/(p q)
-             (T+V)'_+ = F3 u              (T+V)'_- = (F3-(j-i)) u
-             T'       = (F3-(j-i)/2) u    V'_±     = ±(j-i)/2 u
-             A'       = E'_+ - F3 u       (smooth; equals E'_- - (F3-(j-i)) u)
-             D        = (j-i) u           the slope jump, = E'_+ - E'_-
+             (T+V)'_+ = F3 * slope_unit              (T+V)'_- = (F3-(j-i)) * slope_unit
+             T'       = (F3-(j-i)/2) * slope_unit    V'_±     = +-(j-i)/2 * slope_unit
+             A'       = E'_+ - F3 * slope_unit       (smooth; equals E'_- - (F3-(j-i)) u)
+             D        = (j-i) * slope_unit           the slope jump, = E'_+ - E'_-
 S_plus is derived as S_minus + (j-i)f, and slope_right as slope_left + D.  Do not compute
 slope_right as S_plus/(p q): for most tie points the kink is orders of magnitude below S_minus and
 the subtraction loses it completely.
-F3 is therefore the right-hand slope of T+V in units of u, NOT the slope of T alone.
+F3 is therefore the right-hand slope of T+V in units of slope_unit, NOT the slope of T alone.
 """
 import glob, os
 import numpy as np
 
 STORED = ["i", "j", "pstar", "ln_fi", "E_minus_Ehalf", "S_minus", "F3",
-          "is_cusp", "decided_by", "gap_prev", "gap_next", "rank_in_n"]
+          "is_cusp", "decided_by", "gap_prev", "gap_next", "rank_in_n", "n_tied_pairs"]
 CUSP_EXTRA = ["cusp_gap_prev", "cusp_gap_next", "cusp_intervening_prev", "cusp_intervening_next",
               "nb_i", "nb_j"]
-DERIVED = ["n", "width", "band", "w_i", "f_i", "u", "kappa", "S_plus", "E", "E_half", "T", "A", "V",
+DERIVED = ["n", "is_axis", "width", "band", "w_i", "f_i", "slope_unit", "kink_pos", "kappa",
+           "S_plus", "E", "E_half", "T", "A", "V",
            "slope_left", "slope_right", "slope_T", "slope_A", "slope_V_right", "D",
            "gap_nearest", "n_gap_nearest", "cusp_gap_nearest", "is_first_band"]
 
@@ -68,12 +71,13 @@ def _read(kind, n=None, data="data", columns=None):
 def _derive(d):
     n = d["n"].astype(np.float64); i = d["i"].astype(np.float64); j = d["j"].astype(np.float64)
     p = d["pstar"]; q = 1.0 - p; pq_ = p*q
+    d["is_axis"] = d["n_tied_pairs"] > 1 if "n_tied_pairs" in d else np.zeros(len(p), bool)
     d["width"] = (j - i).astype(np.int32)
     d["band"] = (i + j - n).astype(np.int32)
     d["is_first_band"] = d["band"] == 1
     d["w_i"] = (n + i - j).astype(np.int32)
     d["f_i"] = np.exp(d["ln_fi"])
-    d["u"] = d["f_i"]/pq_
+    d["slope_unit"] = d["f_i"]/pq_          # the unit f/(p*q*) that the slopes below are in
     d["E"] = d["E_half"] + d["E_minus_Ehalf"]
     r = d["w_i"].astype(np.float64)
     d["T"] = (2*r + 1)*d["f_i"]
@@ -81,18 +85,25 @@ def _derive(d):
     d["A"] = d["E"] - d["T"]
     d["kappa"] = (j - i)*d["f_i"]               # the kink (j-i)f(i); S_plus - S_minus
     d["S_plus"] = d["S_minus"] + d["kappa"]
+    with np.errstate(divide="ignore", invalid="ignore"):
+        d["kink_pos"] = d["S_minus"]/d["kappa"]   # where zero sits in the jump; cusp <=> -1<.<0
     d["slope_left"] = d["S_minus"]/pq_
     d["D"] = d["kappa"]/pq_
     d["slope_right"] = d["slope_left"] + d["D"]  # never S_plus/pq: that cancels the kink away
-    d["slope_T"] = (d["F3"] - (j - i)/2.0)*d["u"]
-    d["slope_V_right"] = (j - i)/2.0*d["u"]
-    d["slope_A"] = d["slope_right"] - d["F3"]*d["u"]
+    d["slope_T"] = (d["F3"] - (j - i)/2.0)*d["slope_unit"]
+    d["slope_V_right"] = (j - i)/2.0*d["slope_unit"]
+    d["slope_A"] = d["slope_right"] - d["F3"]*d["slope_unit"]
     for a, b, out in (("gap_prev", "gap_next", "gap_nearest"),
                       ("cusp_gap_prev", "cusp_gap_next", "cusp_gap_nearest")):
         if a in d:
             d[out] = np.fmin(np.nan_to_num(d[a], nan=np.inf), np.nan_to_num(d[b], nan=np.inf))
             d[out][np.isinf(d[out])] = np.nan
     d["n_gap_nearest"] = d["n"]*d["gap_nearest"]
+    # the pair decomposition T/A/V is meaningless on the p=1/2 axis row (it is a multi-tie), but
+    # u, kappa, D and the slopes are all still correct there.
+    if d["is_axis"].any():
+        for c in ("T", "A", "V", "slope_T", "slope_V_right", "slope_A", "w_i", "f_i"):
+            d[c] = np.where(d["is_axis"], np.nan, d[c])
     return d
 
 def load_ties(n, data="data", columns=None):

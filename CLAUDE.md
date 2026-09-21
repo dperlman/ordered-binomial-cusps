@@ -84,8 +84,10 @@ approaches and the open questions.  Append new results to it (with the n-range t
   per-n files and the interval-check log were byte-identical to the old script's output.
 
 ## Status
-- Cusp tables complete for n<=2000 (cusps_n2000.csv.gz).  Results, counts and timings are in
-  RESEARCH_LOG.md section 7 (data architecture).
+- Cusp tables complete for n<=3000 (cusps_n3000.csv.gz): 1,591,532 cusps, 0 UNRESOLVED.
+- Tie-point Parquet dumps exist for n = 100, 200, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000
+  (schema v3: row 0 of each is the p=1/2 symmetry axis; see RESEARCH_LOG.md section 8).
+- Results, counts and timings are in RESEARCH_LOG.md section 8 (log entries).
 
 ## Data publication policy (three tiers) -- keep to this
 The public repo is github.com/dperlman/ordered-binomial-cusps.  Generated data is large and

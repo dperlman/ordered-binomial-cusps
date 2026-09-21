@@ -32,6 +32,13 @@ Stored columns (float64 unless noted; see cusps_data.py for everything derived f
                                   needed; 'UNRESOLVED' if even 200 digits did not settle it
     gap_prev, gap_next  distance in p* to the adjacent tie points (NaN at the ends)
     rank_in_n           int32     position in p*-sorted order within this n
+    n_tied_pairs        int16     1 for an ordinary tie point.  Row 0 of every partition is the
+                                  SYMMETRY AXIS p=1/2, where all mirror pairs (i,n-i) tie at once;
+                                  there it counts them, and (i,j) is the sentinel (0,n) so that
+                                  band = i+j-n = 0 marks it (every real tie point has band >= 1).
+                                  E_minus_Ehalf is exactly 0 and u = S_-/kappa is exactly -1/2
+                                  there, by E(p)=E(1-p).  F3 is NaN: the pair decomposition does
+                                  not apply to a multi-tie.
   cusps only, additionally:
     cusp_gap_prev/next, cusp_intervening_prev/next, nb_i, nb_j (nearest cusp by |p*| difference)
 
@@ -44,7 +51,7 @@ import numpy as np
 import binom_core as core
 from binom_core import TAG_CHECK, TAG_MIN
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 def _screen_chunk(a):
     n, lo, hi = a
@@ -64,9 +71,16 @@ def build(n, data, force=False, verify=None, workers=1, pool=None):
     r = _screen_parallel(n, workers, pool)
     o = np.argsort(r['pstar'], kind='stable')
     r = {k: v[o] for k, v in r.items()}
+    # prepend the symmetry axis p=1/2 (see binom_core.axis_point)
+    aSm, aSp, aE, akap, apairs = core.axis_point(n)
+    axis = dict(i=0, j=n, pstar=0.5, ln_fi=np.log(akap/n), E=aE, S_minus=aSm,
+                F3=np.nan, tag=(TAG_MIN if aSm < 0 < aSp else 0))
+    for k in r: r[k] = np.concatenate([np.array([axis[k]], dtype=r[k].dtype), r[k]])
+    n_pairs = np.ones(len(r['i']), np.int16); n_pairs[0] = apairs
     c = len(r['i'])
     # --- certify every CHECK-tagged tie point, exactly as the generator does ---
     decided = np.array(['double']*c, dtype=object)
+    decided[0] = 'symmetry'            # the axis row is settled exactly by E(p) = E(1-p)
     is_cusp = r['tag'] == TAG_MIN
     checks = np.flatnonzero(r['tag'] == TAG_CHECK)
     t_cert = time.time()
@@ -87,10 +101,12 @@ def build(n, data, force=False, verify=None, workers=1, pool=None):
                 F3=pa.array(r['F3']), is_cusp=pa.array(is_cusp),
                 decided_by=pa.array(decided.tolist()).dictionary_encode(),
                 gap_prev=pa.array(gap_prev), gap_next=pa.array(gap_next),
-                rank_in_n=pa.array(np.arange(c, dtype=np.int32)))
+                rank_in_n=pa.array(np.arange(c, dtype=np.int32)),
+                n_tied_pairs=pa.array(n_pairs))
     meta = {b'n': str(n).encode(), b'E_half': repr(Eh).encode(), b'n_ties': str(c).encode(),
             b'n_cusps': str(int(is_cusp.sum())).encode(), b'n_checked': str(len(checks)).encode(),
             b'n_unresolved': str(n_unres).encode(), b'normalised_masses': b'1',
+            b'includes_axis_p_half': b'1', b'axis_n_tied_pairs': str(apairs).encode(),
             b'schema_version': str(SCHEMA_VERSION).encode(), b'TINY': repr(core.TINY).encode(),
             b'MARGIN': repr(core.MARGIN).encode(), b'GAP': repr(core.GAP).encode()}
     def write(table, d):
@@ -119,7 +135,8 @@ def build(n, data, force=False, verify=None, workers=1, pool=None):
                nb_j=pa.array(r['j'][ci][near].astype(np.int16)))
     write(pa.table(sub), cdir)
     dt = time.time()-t0
-    msg = (f"n={n}: {c:,} ties, {int(is_cusp.sum())} cusps, {len(checks)} certified "
+    msg = (f"n={n}: {c:,} rows (incl. p=1/2 axis, {apairs} pairs), {int(is_cusp.sum())} cusps, "
+           f"{len(checks)} certified "
            f"({t_cert:.1f}s of {dt:.1f}s)")
     if n_unres: msg += f"  *** {n_unres} UNRESOLVED ***"
     print(msg + f" -> {tdir}")
@@ -159,6 +176,7 @@ def verify_against_csv(n, path, r, is_cusp, decided):
         print(f"  verify: the CSV table has no rows for n={n} "
               f"(this is exactly the case a lookup would have silently mislabelled)"); return
     got = {(int(a), int(b)) for a, b, c in zip(r['i'], r['j'], is_cusp) if c}
+    got.discard((0, n))                      # the axis row is not in the certified CSV table
     missing = set(ref) - got; extra = got - set(ref)
     same_route = sum(1 for t in range(len(r['i']))
                      if (int(r['i'][t]), int(r['j'][t])) in ref

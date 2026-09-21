@@ -336,3 +336,26 @@ new trigger drops that the old rule flagged, certify anyway and confirm the verd
   fixed the iCloud restore hazard that nearly corrupted the previous merge.
 - analyze_cusps rerun: 44 interval-certified cusps overall (9 with F3<0); the closest cusp to E(1/2)
   is still always in the first band (i+j=n+1) for every n<=3000, and min (E-E(1/2))*n = 0.0088.
+
+### 2026-09-21 (Claude Code): the p=1/2 axis is now a row in the tie-point dumps
+- p=1/2 is NOT an ordinary tie point: all mirror pairs (i,n-i) tie there simultaneously (n/2 of
+  them), which is exactly why the i+j>n filter excludes it -- it IS the symmetry axis.  The
+  single-pair bookkeeping S_+ = S_- + (j-i)f(i) does not describe it.
+- What does apply is E(p) = E(1-p), giving E'(1/2-) = -E'(1/2+) exactly, hence S_- = -S_+ and
+  kink position S_-/kappa = -1/2 EXACTLY: the zero sits dead centre in the slope jump, so p=1/2 is
+  the most robust cusp there is.  Verified against finite differences.
+- p=1/2 is a cusp (S_- < 0 < S_+) for EVERY n from 3 to 3000, extending section 2 fact 7, which had
+  it verified only to n<=40.  Smallest S_+ is 0.375 at n=3, so double precision settles it with an
+  enormous margin; decided_by is recorded as 'symmetry', not a numerical route.
+- CAUTION for anyone recomputing this: f(k) and f(n-k) are equal in exact arithmetic but differ in
+  the last ulp through lgamma, so a stable sort ranks them by numerical noise and returns the WRONG
+  SIGN for S_+.  It did, for 26 values of n, until the masses were symmetrised (f + f[::-1])/2 and
+  the ranking built with lexsort((k, f)) -- ties to the smaller index, which is the ordering just
+  to the right of 1/2.
+- Schema version 3: each partition now carries the axis as row 0, with sentinel (i,j) = (0,n) so
+  band = i+j-n = 0 marks it (every real tie point has band >= 1), plus an n_tied_pairs column.
+  E_minus_Ehalf is exactly 0 there and F3 is NaN; cusps_data blanks T/A/V/w_i/f_i on that row,
+  since the pair decomposition does not apply, while kappa, D and the slopes remain correct.
+  All 11 partitions rebuilt (18 min): n = 100..8000, each gaining exactly one row and one cusp.
+- cusps_data: the old derived name "u" meant f/(p*q*) while the plotting code used u for S_-/kappa.
+  Renamed to slope_unit, and kink_pos = S_-/kappa added as a first-class derived column.
