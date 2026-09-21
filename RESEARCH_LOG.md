@@ -111,9 +111,10 @@ PROMISING (the main reduction):
   cusp p* stays ~0.65.  (n<=2000 done; tie-point dumps exist at n=3000,4000,5000.)
 - Decide on the sharpened CHECK trigger (section 8): prototyped, 99% reduction with 0 disagreements
   at n<=1000, but the error constants are not yet derived and it is NOT in use.
-- Conjecture (section 8, 2026-09-21): a cusp's pair mass f(i) is bounded below, ~1e-7 for n<=3000,
-  drifting down roughly like n^-1.67.  If provable it would let the generator skip ~90% of tie
-  points outright.  Rests on piecewise concavity (fact 7) and on tie-point spacing from the smooth
+- Conjecture (section 8, 2026-09-21): a cusp's pair mass f(i) is bounded below, ~1e-7 for n<=3000.
+  How that floor moves with n is NOT established -- the low tail fits no law (see the correction
+  there); only the bulk is clean, at n^-1/2.  If a bound were provable it would let the generator
+  skip ~90% of tie points outright.  Rests on piecewise concavity (fact 7) and on tie-point spacing from the smooth
   maxima of E, neither of which is proved.
 - Quantify cusp "depth" (dip height before the nearest smooth max) for all cusps; conjecture:
   negative-F3 cusps are the shallowest.
@@ -371,11 +372,17 @@ new trigger drops that the old rule flagged, certify anyway and confirm the verd
   |S_-| < kappa: a tiny pair mass gives a tiny kick, the tie point sits on the curve and barely
   bends it.  That is why the curved sections carry thousands of tie points and few cusps.
 - Observed floor over ALL cusps n<=3000: min f(i) = 6.56e-8 (n=1075, pair (572,734)), with near-
-  repeats ~7e-8 at n=298 and n=2775.  Per-n minima vary by 2-3 orders (3.4e-5 at n=1000 vs 6.6e-8 at
-  n=1075), consistent with a near-miss statistic: how close the nearest tie point happens to land
-  to a smooth local maximum of E.  Fit of the per-n floor for n>=300: ~4.6 * n^-1.67, drifting down.
+  repeats ~7e-8 at n=298 and n=2775.
   CORRECTION: an earlier statement in this session that "cusps need f(i) >~ 1e-5" came from three
   sampled n with high floors and is wrong by ~2.5 orders; 1e-7 is the right scale.
+  SECOND CORRECTION (2026-09-21, plotting): the claim here that the per-n floor follows ~4.6*n^-1.67
+  was overstated.  That fit has log-log correlation only -0.55, and other order statistics of the
+  same low tail give incompatible exponents -- n^-0.97 for the 1st percentile (corr -0.27) and
+  n^-3.32 for the 5th smallest (corr -0.78).  The low tail follows no law; it is a rare-event
+  statistic.  What IS clean: the median and the maximum both scale as n^-0.50 with log-log
+  correlation -1.00 (median ~ 0.593 n^-0.50), which is just the 1/sqrt(n) of the masses themselves.
+  The running minimum steps down only 10 times over n=300..3000 and has been flat at 6.56e-8 since
+  n=1075.  Spread within a single n is large (429x at n=3000: 3.6e-5 to 1.5e-2).
 - Prize if it could be made rigorous: at n=8000, 93.5% of tie points have f(i) < 1e-5, 89.3% have
   f(i) < 1e-10, 84.1% have f(i) < 1e-20, and none of those is a cusp.  Skipping them would remove
   most of the O(n^2) tie-point evaluations -- a bigger lever than the TINY window (which only
@@ -402,3 +409,19 @@ new trigger drops that the old rule flagged, certify anyway and confirm the verd
 - Pair mass vs width at n=1000: corr(ln f, width) = -0.947, corr(ln f, -width^2/(8npq)) = +0.998,
   i.e. ln f ~ c - (j-i)^2/(8 n p* q*): "nearby swap = larger mass" holds with width measured in
   standard deviations sqrt(npq), which shrink toward p=1.  corr(ln f, ln kappa) = 1.000.
+
+### 2026-09-21 (Claude Code): cusp mass floor vs n (plotting/mass_floor.py)
+- All 1,591,532 cusps of n<=3000 plotted as f(i) against n, log-log, with per-n median, 1st
+  percentile, minimum and the running lower envelope; plus minima and 1st percentiles at
+  n = 4000..8000 from the Parquet dumps.  f(i) is recovered from the CSV as (S_+ - S_-)/(j-i);
+  cross-checked against the stored ln_fi at n=1000/2000/3000, max relative difference 7e-16.
+- The bulk is clean: median and max both ~ n^-1/2, log-log corr -1.00.  The low tail is not a
+  trend -- see the correction in the previous entry.
+- Visible structure worth following up: the cusps do not fill the band between the median and the
+  floor.  They form distinct downward streaks, each spanning ~2 orders of magnitude in f(i) and
+  starting at a sharply defined upper edge.  The streaks repeat across n rather than scattering,
+  which suggests they are the (i,j) bands (i+j = n+m) seen in the mass coordinate.  Not analysed.
+- The n>=4000 points sit consistently ABOVE the n<=3000 envelope (minima 2.4e-6 .. 2.8e-5 against
+  6.6e-8 at n=1075).  That is expected from sampling only 5 values of n rather than 2,997: the
+  envelope is built from rare events, so it needs many n to dip.  It is NOT evidence that the floor
+  rises with n.
