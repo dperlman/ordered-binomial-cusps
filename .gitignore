@@ -28,7 +28,5 @@ cusps_n*.csv.gz
 /negF3_neighbors.csv
 /all_neighbors.csv
 
-# --- run logs ---
-stage1.log
-stage2.log
-analysis_run.log
+# --- run logs (never tracked; regenerate the run instead) ---
+*.log

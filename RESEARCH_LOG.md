@@ -262,3 +262,26 @@ E'_+ - E'_- = D to 6e-16.
   unnormalised values and matched merge's n*.csv glob, so they would have been merged in as silent
   duplicate rows.  merge() now matches ^n\d{5}\.csv$ exactly and prints anything it skips.  Check
   the merged row count against the expected total after any regeneration.
+
+### 2026-09-20 (Claude Code, later still): faster certification and parallel tie dumps
+- certify() rewritten scale-free: every decision is invariant under a common positive scale, so the
+  masses are taken relative to f(i)=1 and built by the kernel's recurrence.  That removes the
+  binomial coefficients entirely -- ~n-digit integers that profiling showed were 72% of the routine
+  at n=4000 (computing all n+1 of them is O(n^2) in bit complexity).  Cost ~n^1.53 -> ~n^1.05.
+  Validated on ALL 34,789 logged checks: 0 verdict mismatches, 0 differences in precision route.
+- dump_ties.py --workers N splits the i-loop into work-balanced chunks (equal tie-point counts, not
+  equal i) and distributes the certifications.  Rebuilding n=2000 in parallel gave a byte-for-byte
+  identical Parquet file, metadata included.  Single-n dump times: n=2000 41.5s -> 4.9s,
+  n=3000 203.8s -> 16.7s, n=4000 ~15 min (modelled) -> 43.7s, n=5000 -> 92 s.
+- Tie-point dumps now exist for n = 100, 200, 500, 1000, 2000, 3000, 4000, 5000.  n=5000 has
+  6,245,001 ties and 1,770 cusps (the linear fit cusps(n) = 0.3538n - 0.25 predicts 1,769).
+  Check counts run BELOW the n^3.45 fit at large n: 247 at n=3000 (fit 308), 637 at n=4000 (fit 830),
+  1,369 at n=5000 (fit 1,792), so the runtime projections for n>=4000 are pessimistic.
+- Questions asked of the n<=2000 cusp table (707,417 cusps over 1,997 values of n):
+  (a) E(cusp) > E(1/2) at EVERY cusp -- 0 failures.  Tightest margin 5.4e-6 at n=2000 against ~2e-13
+      numerical error.  Since the local minima of E are the cusps, this is the conjecture holding.
+  (b) The first cusp (smallest p*) has the lowest E for all but FIVE n: 6, 21, 50, 76, 125.  In each
+      the second cusp is lower.  Holds for every n from 126 to 2000.
+  (c) E at the cusps is NOT monotone in p*: it fails at 1,963 of 1,997 n, with 52,206 of 705,420
+      adjacent cusp pairs (7.4%) stepping downward.  The decreases are spread over the whole cusp
+      range (p* 0.5006..0.6520, median 0.6057), not confined to an edge.

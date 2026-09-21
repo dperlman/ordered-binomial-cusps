@@ -21,6 +21,10 @@ approaches and the open questions.  Append new results to it (with the n-range t
 - Conjecture under study: E(n,p) >= E(n,1/2) for all p (p=1/2 is the global minimum).
 
 ## Code
+- certify() is scale-free: masses relative to f(i)=1, built by the same recurrence as the kernel,
+  so no binomial coefficients (they were ~n-digit integers costing 72% of the routine at n=4000).
+  Cost went from ~n^1.53 to ~n^1.05; verified identical verdict AND identical precision route on all
+  34,789 logged checks.  S_+ = S_- + (j-i) exactly in these units.
 - binom_core.py is the ONLY implementation of the mathematics: constants (MARGIN/GAP/TINY), lnC,
   E_half, the numba screening kernel (tie_kernel/screen), certify()/certify_escalating(),
   evaluate(), recheck().  Every other script imports it.  Do not re-derive any of this elsewhere --
@@ -46,8 +50,10 @@ approaches and the open questions.  Append new results to it (with the n-range t
   tie point that needed interval arithmetic and its verdict.
 - dump_ties.py (binom_core + pyarrow): builds the Parquet plotting datasets for a given n --
   data/ties/n=NNNNN/ (every tie point) and data/cusps/n=NNNNN/ (cusp subset).  Run
-  .venv/bin/python dump_ties.py --n 100 --data data/ [--verify].  It CERTIFIES IN PLACE using
-  binom_core.certify, and records decided_by per row.  It does not look is_cusp up in
+  .venv/bin/python dump_ties.py --n 100 --data data/ [--verify] [--workers 8].  It CERTIFIES IN
+  PLACE using binom_core.certify, and records decided_by per row.  --workers splits the i-loop into
+  work-balanced chunks and distributes the certifications; output is identical however it is cut
+  (verified byte-for-byte at n=2000).  n=5000 takes 92 s this way.  It does not look is_cusp up in
   cusps_all.csv: a lookup silently marks every tie point as a non-cusp for any n the CSV does not
   cover, which looks like a result rather than an error.  --verify cross-checks against the CSV
   where it exists, as a regression test rather than a dependency.

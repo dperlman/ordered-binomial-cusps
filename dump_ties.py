@@ -1,7 +1,7 @@
 """
 dump_ties.py -- export every tie point (p*>1/2) for given n to Parquet, for plotting.
 
-    python dump_ties.py --n 100 [--n 200 ...] [--data data/] [--force]
+    python dump_ties.py --n 100 [--n 200 ...] [--data data/] [--force] [--workers 8]
     python dump_ties.py --n 100 --verify cusps/cusps_all.csv     # cross-check against the CSV table
 
 Writes, per n:
@@ -38,6 +38,7 @@ Stored columns (float64 unless noted; see cusps_data.py for everything derived f
 Masses are normalised by their own sum before E is accumulated; see binom_core.py for why.
 """
 import argparse, csv, os, time
+from multiprocessing import Pool
 import numpy as np
 
 import binom_core as core
@@ -45,13 +46,22 @@ from binom_core import TAG_CHECK, TAG_MIN
 
 SCHEMA_VERSION = 2
 
-def build(n, data, force=False, verify=None):
+def _screen_chunk(a):
+    n, lo, hi = a
+    return core.screen(n, collect_all=True, i_lo=lo, i_hi=hi)
+
+def _certify_one(a):
+    n, i, j = a
+    v, how = core.certify_escalating(n, i, j)
+    return (v == 'MIN'), (how if v else 'UNRESOLVED')
+
+def build(n, data, force=False, verify=None, workers=1, pool=None):
     import pyarrow as pa, pyarrow.parquet as pq
     tdir = os.path.join(data, "ties", f"n={n:05d}"); cdir = os.path.join(data, "cusps", f"n={n:05d}")
     if os.path.exists(os.path.join(tdir, "part.parquet")) and not force:
         print(f"n={n}: exists, skipping (use --force)"); return None
     t0 = time.time()
-    r = core.screen(n, collect_all=True)
+    r = _screen_parallel(n, workers, pool)
     o = np.argsort(r['pstar'], kind='stable')
     r = {k: v[o] for k, v in r.items()}
     c = len(r['i'])
@@ -60,10 +70,11 @@ def build(n, data, force=False, verify=None):
     is_cusp = r['tag'] == TAG_MIN
     checks = np.flatnonzero(r['tag'] == TAG_CHECK)
     t_cert = time.time()
-    for t in checks:
-        v, how = core.certify_escalating(n, int(r['i'][t]), int(r['j'][t]))
-        decided[t] = how if v else 'UNRESOLVED'
-        is_cusp[t] = (v == 'MIN')
+    if len(checks):
+        args = [(n, int(r['i'][t]), int(r['j'][t])) for t in checks]
+        res = pool.map(_certify_one, args, chunksize=1) if pool else [_certify_one(a) for a in args]
+        for t, (cusp, how) in zip(checks, res):
+            is_cusp[t] = cusp; decided[t] = how
     t_cert = time.time() - t_cert
     n_unres = int((decided == 'UNRESOLVED').sum())
     Eh = core.E_half(n)
@@ -123,6 +134,18 @@ def build(n, data, force=False, verify=None):
         w.writerow(line)
     return line
 
+def _screen_parallel(n, workers, pool):
+    """Screen one n, splitting the i-loop into work-balanced chunks across `pool`.
+
+    Each tie point is computed identically however the range is cut, and the chunks are
+    concatenated in i order, so the result is independent of `workers`.
+    """
+    if not pool or workers <= 1:
+        return core.screen(n, collect_all=True)
+    chunks = core.work_chunks(n, workers)
+    parts = pool.map(_screen_chunk, [(n, a, b) for a, b in chunks])
+    return {k: np.concatenate([p[k] for p in parts]) for k in parts[0]}
+
 def verify_against_csv(n, path, r, is_cusp, decided):
     """Regression check: do we agree with the certified CSV table where it covers this n?"""
     if not os.path.exists(path):
@@ -151,8 +174,14 @@ if __name__ == "__main__":
     ap.add_argument("--n", type=int, action='append', required=True)
     ap.add_argument("--data", default="data")
     ap.add_argument("--force", action='store_true')
+    ap.add_argument("--workers", type=int, default=8,
+                    help="processes for the i-loop and the certifications (1 = serial)")
     ap.add_argument("--verify", nargs='?', const="cusps/cusps_all.csv", default=None,
                     help="cross-check the cusp set against this certified CSV table")
     a = ap.parse_args()
     core.screen(10, collect_all=True)     # compile the kernel once up front
-    for n in a.n: build(n, a.data, a.force, a.verify)
+    if a.workers > 1:
+        with Pool(a.workers) as pool:
+            for n in a.n: build(n, a.data, a.force, a.verify, a.workers, pool)
+    else:
+        for n in a.n: build(n, a.data, a.force, a.verify)
