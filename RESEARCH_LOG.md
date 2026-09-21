@@ -466,10 +466,13 @@ E/n = p exactly and every n collapses onto the diagonal.  VERIFIED to machine pr
   dispose of them.  Excluding both loses n-1 tie points per n from our half of the domain.
 - The true last tie point is (n-1,n) at p* = n/(n+1), not (n-2,n-1) at (n-1)/(n+1) as stored.
   Above n/(n+1) every mass is in natural order and E = n p exactly.
-- CUSP IMPACT: none for n >= 4.  Brute force over 88,493 excluded pairs (all n=3..400, plus
-  n=500,700,1000,1500,2000,3000) finds exactly ONE cusp among them: n=3, pair (1,3), p*=0.6340,
-  confirmed a local minimum by direct evaluation of E.  Our table has no rows at all for n=3, so
-  that cusp is missing from cusps_all.csv.  Everything for n>=4 is unaffected.
+- CUSP IMPACT: none for n >= 4, now EXHAUSTIVELY certified.  All 4,498,497 excluded pairs (i,n)
+  for n=4..3000 were run through the pipeline's own criterion -- double screen with MARGIN,
+  escalation on margin OR near-tie, mpmath interval verdict -- in 8 min 19 s on 8 workers:
+  198 needed interval arithmetic, 0 unresolved, 0 cusps.  (An earlier sampled check over
+  88,493 pairs had found the same.)  The only cusp in the whole family is n=3, pair (1,3),
+  p*=0.6340, confirmed a local minimum by direct evaluation of E; our table has no n=3 rows at
+  all.  So cusps_all.csv is COMPLETE for n>=4 under the widened convention without regeneration.
 - WHY they are not cusps, structurally: at the tie (i,n) the common mass IS f(n) = p*^n.  For
   p* > 0.66 there are no cusps at all (E' > 0 there); for p* < 0.66, max f over such ties is
   2.8e-6 at n=30, 4.8e-10 at n=50, 1.7e-181 at n=1000 -- below the observed cusp mass floor ~1e-7
