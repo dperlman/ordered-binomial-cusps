@@ -109,6 +109,10 @@ PROMISING (the main reduction):
 - Prove (★), starting with the first-switch case.
 - Extend cusp tables to n<=5000; check whether negative-F3 cusps remain "close" and whether max
   cusp p* stays ~0.65.  (n<=2000 done; tie-point dumps exist at n=3000,4000,5000.)
+- Decide whether the tie-point convention should widen from 0<i<j<n to 0<=i<j<=n (section 8,
+  2026-09-21).  The pairs (i,n) are real tie points with p*>1/2 and are currently excluded; they
+  contain no cusps for n>=4, but they are missing from the tie-point datasets, and the true last
+  tie point p*=n/(n+1) -- above which E = n p exactly -- is among them.
 - Decide on the sharpened CHECK trigger (section 8): prototyped, 99% reduction with 0 disagreements
   at n<=1000, but the error constants are not yet derived and it is NOT in use.
 - Conjecture (section 8, 2026-09-21): a cusp's pair mass f(i) is bounded below, ~1e-7 for n<=3000.
@@ -444,3 +448,31 @@ new trigger drops that the old rule flagged, certify anyway and confirm the verd
   against 8e-4 for the 2nd).
 - Not explained: why the 2nd cusp's constant is parity-free while the 1st splits by sqrt 2, and
   what 1.96298 and 4.034 are in closed form.  The n^(-3/2) scaling itself also has no proof yet.
+
+### 2026-09-21 (Claude Code): the 0<i<j<n convention EXCLUDES real tie points (i,n)
+Raised by the user asking why E/n was not the natural quantity to plot.  Their point: above the
+last tie point the ranking is the natural order w_k = k, so E = sum_k k f_k = E[K] = n p, hence
+E/n = p exactly and every n collapses onto the diagonal.  VERIFIED to machine precision (E - np =
+0 or ~1e-14 at n=10,50,200).  But finding "the last tie point" exposed a gap.
+
+- At n=10 the sorted order of the masses changes at 25 values of p in (0.5,1).  Our tie list
+  (0<i<j<n) contains 16 of them.  The 9 missing are exactly the pairs (i, n), i = 1..n-1.
+- Those are genuine order changes and genuine kinks in E.  The convention excludes i=0 and j=n; by
+  the symmetry (i,j) <-> (n-j,n-i) the pairs (0,j) map to (i,n), and that whole family maps to
+  itself -- but (0,j) has p* < 1/2 while (i,n) has p* > 1/2, so restricting to p*>1/2 does NOT
+  dispose of them.  Excluding both loses n-1 tie points per n from our half of the domain.
+- The true last tie point is (n-1,n) at p* = n/(n+1), not (n-2,n-1) at (n-1)/(n+1) as stored.
+  Above n/(n+1) every mass is in natural order and E = n p exactly.
+- CUSP IMPACT: none for n >= 4.  Brute force over 88,493 excluded pairs (all n=3..400, plus
+  n=500,700,1000,1500,2000,3000) finds exactly ONE cusp among them: n=3, pair (1,3), p*=0.6340,
+  confirmed a local minimum by direct evaluation of E.  Our table has no rows at all for n=3, so
+  that cusp is missing from cusps_all.csv.  Everything for n>=4 is unaffected.
+- WHY they are not cusps, structurally: at the tie (i,n) the common mass IS f(n) = p*^n.  For
+  p* > 0.66 there are no cusps at all (E' > 0 there); for p* < 0.66, max f over such ties is
+  2.8e-6 at n=30, 4.8e-10 at n=50, 1.7e-181 at n=1000 -- below the observed cusp mass floor ~1e-7
+  once n > ~25.  n=3 is the exception precisely because p^3 = 0.25 is not small.
+- DATA IMPACT: the Parquet tie-point dumps are missing n-1 rows per n (999 at n=1000, 2999 at
+  n=3000), of which 216 and 647 respectively lie inside the cusp range p*<0.66.  Any plot of "all
+  tie points" is incomplete on the right-hand side, and the E/n plot needs them to reach n/(n+1).
+- NOT CHANGED.  0<i<j<n is the convention in CLAUDE.md and in the original note; whether to widen
+  it to 0<=i<j<=n is the user's call, not a bug to fix silently.
