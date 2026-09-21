@@ -497,3 +497,21 @@ E/n = p exactly and every n collapses onto the diagonal.  VERIFIED to machine pr
   tie points" is incomplete on the right-hand side, and the E/n plot needs them to reach n/(n+1).
 - NOT CHANGED.  0<i<j<n is the convention in CLAUDE.md and in the original note; whether to widen
   it to 0<=i<j<=n is the user's call, not a bug to fix silently.
+
+### 2026-09-21 (Claude Code): slope-jump plots; the OBD repo's slope data are suspect
+- plotting/slope_jump.py: D = E'_+ - E'_- at every tie point vs tie-point index, coloured by pair
+  mass, log and linear variants.  D > 0 at every tie point (fact 11); verified independently by
+  building the right-side ranking (w_j = w_i + 1) directly and subtracting -- 0 negatives at n=100
+  and n=1000 -- since in this pipeline S_+ is derived as S_- + kappa and cannot show one.
+- At n=100 on a linear axis: a sharp upper envelope at D ~ 2 that the cusps ride (D ~ 1.9 early,
+  drifting to ~0.7 at the end of the cusp range), rising to D ~ 18 as p -> 1 because of the
+  1/(p*q*) factor; the p=1/2 axis sits at D = 2E'_+ = 16.  Everything else is compressed at 0.
+- FLAG for the OTHER repository, ~/git/OBD (OBDsaveSourceData.py and whatever consumes it): its
+  plots of "right slope minus left slope at tie points" show NEGATIVE values.  That is impossible
+  (fact 11), so those slope datasets and plots are wrong and should be regenerated from this
+  pipeline or fixed.  Not yet diagnosed by reading the code.  Leading hypothesis: slopes estimated
+  by finite differences of E, where any stencil not bracketing p* exactly measures the concave
+  curvature of the smooth piece (~E'' dp < 0) instead of the kink, which dominates whenever the
+  true D is small -- i.e. the negatives should sit on low-mass tie points and never on cusps.
+  If instead the negatives appear on the envelope or at cusps, the old code computes something
+  else and needs reading.
