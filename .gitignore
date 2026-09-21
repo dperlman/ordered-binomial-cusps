@@ -28,5 +28,8 @@ cusps_n*.csv.gz
 /negF3_neighbors.csv
 /all_neighbors.csv
 
+# --- plot outputs (large PNGs; regenerate with plotting/*.py) ---
+plots/
+
 # --- run logs (never tracked; regenerate the run instead) ---
 *.log
