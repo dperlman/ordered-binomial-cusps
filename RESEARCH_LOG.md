@@ -109,8 +109,12 @@ PROMISING (the main reduction):
 - Prove (★), starting with the first-switch case.
 - Extend cusp tables to n<=5000; check whether negative-F3 cusps remain "close" and whether max
   cusp p* stays ~0.65.  (n<=2000 done; tie-point dumps exist at n=3000,4000,5000.)
-- Decide on the sharpened CHECK trigger (last entry in section 8): prototyped, 99% reduction with
-  0 disagreements at n<=1000, but the error constants are not yet derived and it is NOT in use.
+- Decide on the sharpened CHECK trigger (section 8): prototyped, 99% reduction with 0 disagreements
+  at n<=1000, but the error constants are not yet derived and it is NOT in use.
+- Conjecture (section 8, 2026-09-21): a cusp's pair mass f(i) is bounded below, ~1e-7 for n<=3000,
+  drifting down roughly like n^-1.67.  If provable it would let the generator skip ~90% of tie
+  points outright.  Rests on piecewise concavity (fact 7) and on tie-point spacing from the smooth
+  maxima of E, neither of which is proved.
 - Quantify cusp "depth" (dip height before the nearest smooth max) for all cusps; conjecture:
   negative-F3 cusps are the shallowest.
 - Prove piecewise concavity of E (fact 7 above is numerical).
@@ -359,3 +363,29 @@ new trigger drops that the old rule flagged, certify anyway and confirm the verd
   All 11 partitions rebuilt (18 min): n = 100..8000, each gaining exactly one row and one cusp.
 - cusps_data: the old derived name "u" meant f/(p*q*) while the plotting code used u for S_-/kappa.
   Renamed to slope_unit, and kink_pos = S_-/kappa added as a first-class derived column.
+
+### 2026-09-21 (Claude Code): cusps need a non-negligible pair mass -- an unproved lower bound
+- Mechanism (the sawtooth): on each piece between tie points E' decreases (concavity, fact 7 --
+  itself only VERIFIED n<=100, not proved); at every tie point E' jumps UP by D = kappa/(p*q*),
+  kappa = (j-i)f(i).  A cusp is a jump that carries E' from negative to positive, so it needs
+  |S_-| < kappa: a tiny pair mass gives a tiny kick, the tie point sits on the curve and barely
+  bends it.  That is why the curved sections carry thousands of tie points and few cusps.
+- Observed floor over ALL cusps n<=3000: min f(i) = 6.56e-8 (n=1075, pair (572,734)), with near-
+  repeats ~7e-8 at n=298 and n=2775.  Per-n minima vary by 2-3 orders (3.4e-5 at n=1000 vs 6.6e-8 at
+  n=1075), consistent with a near-miss statistic: how close the nearest tie point happens to land
+  to a smooth local maximum of E.  Fit of the per-n floor for n>=300: ~4.6 * n^-1.67, drifting down.
+  CORRECTION: an earlier statement in this session that "cusps need f(i) >~ 1e-5" came from three
+  sampled n with high floors and is wrong by ~2.5 orders; 1e-7 is the right scale.
+- Prize if it could be made rigorous: at n=8000, 93.5% of tie points have f(i) < 1e-5, 89.3% have
+  f(i) < 1e-10, 84.1% have f(i) < 1e-20, and none of those is a cusp.  Skipping them would remove
+  most of the O(n^2) tie-point evaluations -- a bigger lever than the TINY window (which only
+  shortens each evaluation) or the sharpened trigger (which only cuts certification).
+- Empirical margin of a skip rule, ratio = |S_-|/kappa (cusp needs < 1), over tie points below the
+  threshold:  threshold 1e-10 -> min ratio 1e6 (n=1000), 1e5 (n=3000), 1e4 (n=8000);
+  threshold 1e-20 -> min ratio 1e14 / 1e15 / 1e14.  The margin ERODES with n at a fixed threshold,
+  so any bound must be n-dependent -- a fixed number is not safe indefinitely.
+- Why no rigorous bound falls out: a tiny-kappa cusp needs the tie point within ~kappa/|E''| of a
+  smooth local maximum of E.  Nothing forbids that; ruling it out needs (a) a lower bound on |E''|
+  on each piece -- unproved, fact 7 is numerical -- and (b) control of how close tie points p*(n,i,j)
+  can sit to the zeros of E', a spacing/Diophantine question with no theorem behind it.  So this is
+  a RESEARCH item (an open conjecture worth stating), not an engineering one.  Not implemented.
