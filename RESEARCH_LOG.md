@@ -616,3 +616,49 @@ the existing data before the second changed what that data contains.
 - Parquet partitions rebuilt, n = 100..1000 by hundreds plus 2000..8000 by thousands.  Row counts
   rise by exactly n-1; cusp counts are unchanged (n=1000: 353, n=2000: 709, n=3000: 1062), while
   certified counts rise (n=3000: 247 -> 269) from the new j=n pairs needing interval arithmetic.
+
+### 2026-09-22 (Claude Code): error analysis for the sharpened trigger -- MEASURED, and a warning
+Step 1 of the sharpened CHECK trigger was to replace the asserted delta_f = 1e-11 and
+delta_p = 1e-12 with derived bounds.  Derived the FORM from the algorithm, then measured every
+quantity against 50-digit values (scale-free mpmath recurrence, no big binomials).
+
+MEASUREMENTS (max over 20-30 random tie points per n; T denotes sum_k |w_k f_k (k - n p*)|):
+- delta_p, relative error of the computed p*: <= 5.8e-12 (worst case n=8000, m=j-i=1).  The derived
+  form is delta_p ~ q * eps * n * ln(n) / m, which at n=8000, m=1 gives 8e-12 against 5.8e-12
+  measured -- form confirmed, and my first algebra was ~7x pessimistic.  Scales as 1/m, so wide ties
+  are far better.  p* is NOT the error driver: its contribution to S_- is negligible.
+- delta_f, relative error of a computed mass: ~1e-12 at n=2000, growing roughly as eps*n^1.4.
+  So the asserted 1e-11 holds to about n=10,000 and fails beyond; any real bound must be
+  n-dependent.  Error is largest at the window edge, smallest at the mode, as the recurrence
+  accumulation predicts.
+- error of S_- itself: 1.4e-10 (n=500), 8.5e-10 (1000), 3.0e-9 (2000), 1.2e-8 (3000), 3.5e-8 (5000).
+  In units of eps*T this is 150, 315, 389, 866, 1144 -- i.e. observed err ~ 0.65 * eps * n^0.88 * T,
+  and T ~ n^1.52.
+- A first attempt at a bound, [(n+1)eps + 40 eps n^1.5] * T, over-covered the true error by
+  950-4250x and would have flagged everything.  Recorded because the failure mode is the point:
+  a bound calibrated by guesswork is useless even when it is valid.
+
+WARNING, and it matters beyond this trigger.  Sm is accumulated by PLAIN summation in _one_tie (E
+gets Neumaier compensation, Sm does not), so the rigorous worst-case rounding bound is (n+1)*eps*T.
+Against MARGIN = 1e-6 that gives:
+      n=1000  bound 2.7e-09  MARGIN/bound  373
+      n=2000  bound 1.5e-08  MARGIN/bound   65
+      n=3000  bound 4.3e-08  MARGIN/bound   23
+      n=5000  bound 1.5e-07  MARGIN/bound  6.5
+      n=8000  bound 5.0e-07  MARGIN/bound  2.0
+      n=12000 bound 1.4e-06  MARGIN/bound  0.7   <-- rigorously exhausted
+So MARGIN = 1e-6 is rigorously defensible to roughly n = 10,000 and no further.  The OBSERVED error
+is ~4x under the worst case (slack 3.2-5.1x across all n measured), so in practice there is more
+room -- MARGIN/observed is still 9 at n=8000 -- but nothing in the pipeline currently checks this,
+and the cusp tables at n<=3000 sit at MARGIN/bound = 23, which is sound.  ACTION for any run past
+n~8000: either compensate the Sm accumulation (cheap: Neumaier, as E already has) or raise MARGIN.
+Compensating would reduce the rigorous bound to ~eps*T, i.e. MARGIN/bound ~ 2000 at n=8000, and is
+the obvious fix.
+
+CONSEQUENCE for the trigger: its win does NOT come from replacing MARGIN.  At n=1500 and n=2000
+every single CHECK came from the near-tie proxy and none from the margin, and the margin term only
+gets tighter than MARGIN below n~3000 while getting looser above n~8000.  The win comes from
+replacing GAP = 1e-8 with the re-ranking bound, whose ambiguity threshold is ~delta_f ~ 1e-12 --
+about 5000x tighter, which is what removed 99% of the checks in the n<=1000 prototype.  So the
+trigger should be built around the cluster bound, and the margin term should be the compensated
+rigorous one, not a fitted constant.
