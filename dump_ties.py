@@ -5,7 +5,7 @@ dump_ties.py -- export every tie point (p*>1/2) for given n to Parquet, for plot
     python dump_ties.py --n 100 --verify cusps/cusps_all.csv     # cross-check against the CSV table
 
 Writes, per n:
-    <data>/ties/n=NNNNN/part.parquet     every tie point 0<i<j<n with i+j>n
+    <data>/ties/n=NNNNN/part.parquet     every tie point 0<=i<j<=n with i+j>n
     <data>/cusps/n=NNNNN/part.parquet    the cusp subset, plus cusp-to-cusp distance columns
     <data>/manifest.csv                  one line per built partition
 
