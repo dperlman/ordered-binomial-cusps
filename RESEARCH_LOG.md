@@ -728,9 +728,19 @@ double computes 2.84e-12 against a resolution threshold of 3.12e-12, i.e. 91% of
 the order right but has no way to know that.  Swapping them moves S_- by exactly 0.4375, and here
 the cluster bound EQUALS that exact effect (ratio 1.00) because the two sit on opposite sides of the
 mode, so |a_k| + |a_l| = |a_k - a_l|.  Against S_- = -7.47e-3 the possible perturbation is 59x the
-quantity whose sign is wanted, and since the perturbation moves S_- and S_+ together while
-kappa = 1452 * f(791) = 4.9e-195 is effectively zero, the cusp window S_- < 0 < S_- + kappa is
-infinitesimally narrow: genuinely undecidable in double, escalation correct and not merely cautious.
+quantity whose sign is wanted, so the trigger cannot decide and escalates.
+BUT THE VERDICT WAS NEVER AT RISK, and this is worth stating because it shows where the trigger is
+conservative.  There are only TWO candidate rankings here, and both give NOT: S_- = -7.4696e-03 as
+computed, S_- = +4.3006e-01 swapped.  Neither is a cusp, because the perturbation moves S_- and S_+
+TOGETHER (kappa is exact) while kappa = 1452*f(791) = 4.9e-195 is effectively zero, so the cusp
+window S_- < 0 < S_- + kappa has width 5e-195 and neither candidate lands in it.  The trigger bounds
+the perturbation rather than enumerating the candidate rankings, so it cannot see that; a trigger
+that evaluated the (here: two) reachable rankings would decide this in double.  That refinement is
+real but was not built: one tie point in 195,243 does not pay for it.
+GENERAL POINT: a rank ambiguity can only flip a verdict when kappa is comparable to the ambiguity.
+kappa = (j-i) f(i) is tiny exactly when the tied pair is in the tail, which is when the cusp window
+is narrow and the answer is NOT regardless.  The dangerous combination is a LARGE kappa (tied pair
+near the mode) together with a large near-mode cluster, and no such case has been seen.
 NOT A DOUBLE TIE.  The cluster is itself the tie point p*(2590,1530,1565) = 0.597458878267249396,
 which sits 9.0e-15 (relative 1.5e-14) from p*(2590,791,2243) = 0.597458878267240398.  Two DISTINCT
 tie points agreeing to 14 digits, not one p* shared by two pairs.  The standing convention (flag any
