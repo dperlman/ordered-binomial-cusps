@@ -663,13 +663,60 @@ and they do not.  The data is also nowhere near the threshold: the smallest |S| 
 double is 1.2e-05 at n=3000 and 1.9e-06 at n=8000, so the real safety factors are ~280 and ~1150
 against the observed error.  A USEFUL rigorous bound needs the cancellation in that sum accounted
 for -- that is the open piece of work, not compensation and not a bigger MARGIN.
-Compensating would reduce the rigorous bound to ~eps*T, i.e. MARGIN/bound ~ 2000 at n=8000, and is
-the obvious fix.
 
 CONSEQUENCE for the trigger: its win does NOT come from replacing MARGIN.  At n=1500 and n=2000
 every single CHECK came from the near-tie proxy and none from the margin, and the margin term only
 gets tighter than MARGIN below n~3000 while getting looser above n~8000.  The win comes from
 replacing GAP = 1e-8 with the re-ranking bound, whose ambiguity threshold is ~delta_f ~ 1e-12 --
 about 5000x tighter, which is what removed 99% of the checks in the n<=1000 prototype.  So the
-trigger should be built around the cluster bound, and the margin term should be the compensated
-rigorous one, not a fitted constant.
+trigger should be built around the cluster bound, and the margin term should be the rigorous one,
+not a fitted constant.
+
+### 2026-09-21 (Claude Code): the sharpened CHECK trigger -- IMPLEMENTED and VALIDATED
+Built as the previous entry concluded: keep MARGIN, replace GAP.  binom_core gains _err_bounds()
+and a second tag; both triggers are computed in the same pass, `sharp` picks which one drives the
+verdict (core.screen(..., sharp=True), cusps_fast.py --sharp).  Default is still the old rule.
+
+THE BOUND.  Swapping adjacent ranks of masses a,b moves S_- by f_a(a-np*) - f_b(b-np*).  So masses
+whose order double precision cannot resolve are grouped into maximal clusters; within a cluster of
+size c any rank moves by at most c-1, giving (c-1)*sum_{k in C} f_k|k - n p*|, summed over clusters.
+That bound is added to MARGIN on BOTH sides (it perturbs S_- and S_+ equally; kappa is exact), so
+no new constant enters.  Two masses are unresolvable when their relative gap is within
+  2 df0 + dstep(|k-md| + |l-md|) + dp|k-l|/q
+with df0 = 4 eps L + eps (L = |lnC[md]| + |md lnp| + |(n-md)lnq|; exp turns an ABSOLUTE argument
+error into a relative one and the three n-sized terms do not cancel), dstep = 3 eps per recurrence
+step, and dp = q*3 eps max(lnC[i],lnC[j])/m the relative error of p* (the lnC[i]-lnC[j] cancellation
+costs a factor n/m).  Every constant counts flops; nothing is fitted.  Normalisation by the mass sum
+is deliberately excluded -- it is common to all masses and cancels in every ratio tested.
+The cluster {i,j} alone contributes NOTHING: f(i)=f(j) exactly and w_j = w_i - 1 is the left-limit
+ranking by definition, not a numerical guess.  A third mass joining them makes it count in full.
+
+VALIDATION (validate_trigger.py, both directions; the previous entry's two open caveats).
+- Against every tie point the GAP rule escalated for n<=3000 -- all 195,243, verdicts already on
+  record in cusps/interval_checks.log: 195,062 decided in double with the SAME verdict mpmath
+  certified, 181 still CHECK, 0 disagreements.  Of the 181, 180 have rbnd = 0 and min|S| < MARGIN,
+  i.e. they are honest margin cases; exactly ONE is a genuine re-ranking flag (n=2590, i=791,
+  j=2243, rbnd = 0.44 against S_- = -7.5e-3, certified NOT) and it comes from a near-mode cluster,
+  precisely the situation the feasibility entry predicted could arise.
+- The untested direction, now tested: over EVERY tie point of n = 135, 400, 800, 1000, 1100, 1200,
+  1500, 2000, 2500, 3000, 4000, 5000 (~14.6M tie points), the new bound flags NOTHING the old rule
+  decided.  Checks per n: 12->0 (1000), 87->0 (2000), 269->0 (3000), 668->1 (4000), 1411->1 (5000).
+  The bounds on the dropped ones are ~1e-287: the GAP proxy was firing on deep-tail masses just
+  above TINY, exactly as diagnosed.
+- End to end, n=1400..1450 generated both ways: all 51 per-n CSVs BYTE-IDENTICAL (certified_by
+  included -- every escalation there resolved to NOT, so none reached the output), interval checks
+  1306 -> 2, wall clock 71.1 s -> 60.5 s on 8 workers.
+
+COST AND PAYOFF.  Computing both triggers costs 7.3% on the screening kernel (n=3000: 51.0 s ->
+54.8 s single core); dropping the old one would recover little, and keeping it is what makes the
+regression test possible.  Measured per-n cost at n=3000: 51.0 s screening + 247 checks * 143 ms =
+86.3 s, against 55.2 s sharpened -- 1.56x.  EXTRAPOLATED from those measured pieces (screening
+~n^2.6, checks ~n^3.0, certify ~n^1.05): 2.6x at n=5000, ~4x at n=8000, ~5x at n=10000.  The win
+grows because certification was overtaking screening.
+
+STATUS AND WHAT IS NOT DONE.  Zero disagreements is necessary, not sufficient; correctness rests on
+_err_bounds, which is derived but assumes lgamma and log are <= 2 ulp and exp <= 1 ulp.  The cluster
+bound is loose for c = 2 with both masses on the SAME side of the mode, where the exact change is
+|f_k a_k - f_l a_l| rather than f_k|a_k| + f_l|a_l|; tightening that is available but bought only one
+tie point in 195,243, so it was left alone.  Existing tables need no regeneration -- the verdicts are
+identical, so n<=3000 stands as generated.

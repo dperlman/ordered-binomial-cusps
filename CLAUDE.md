@@ -57,6 +57,16 @@ approaches and the open questions.  Append new results to it (with the n-range t
 - numba screening kernel (recurrence for the masses, two-pointer merge for ranks, O(n) per tie
   point); masses below TINY=1e-290 are treated as zero, which keeps the interval-arithmetic
   workload at 4-86 checks per n (mean 33) for n=1001..2000.
+- SHARPENED CHECK TRIGGER (2026-09-21, opt-in): core.screen(..., sharp=True) and
+  cusps_fast.py --sharp replace the GAP=1e-8 near-tie proxy with a derived re-ranking cluster bound
+  added to MARGIN.  It leaves every verdict unchanged -- validated against all 195,243 recorded
+  interval verdicts for n<=3000 (0 disagreements) and over ~14.6M tie points in the other direction
+  (0 newly flagged) -- and takes the checks at n=5000 from 1411 to 1.  Default is still the old rule;
+  flip it only deliberately, and re-run validate_trigger.py after ANY change to the kernel's
+  arithmetic.  See RESEARCH_LOG.md, the 2026-09-21 entry, for the bound and its caveats.
+- validate_trigger.py: the regression test for that trigger.  --logged replays every escalation in
+  cusps/interval_checks.log against the recorded mpmath verdict; --sweep N... compares both triggers
+  over every tie point of each N.
 - One CSV per n in cusps/; cusps/cusps_all.csv after merge; interval_checks.log lists every
   tie point that needed interval arithmetic and its verdict.
 - dump_ties.py (binom_core + pyarrow): builds the Parquet plotting datasets for a given n --

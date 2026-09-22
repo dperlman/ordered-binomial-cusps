@@ -69,6 +69,7 @@ def build(n, data, force=False, verify=None, workers=1, pool=None):
         print(f"n={n}: exists, skipping (use --force)"); return None
     t0 = time.time()
     r = _screen_parallel(n, workers, pool)
+    for k in ('tag_alt', 'rbnd'): r.pop(k, None)   # trigger diagnostics; not part of the dataset
     o = np.argsort(r['pstar'], kind='stable')
     r = {k: v[o] for k, v in r.items()}
     # prepend the symmetry axis p=1/2 (see binom_core.axis_point)
