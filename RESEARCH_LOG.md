@@ -675,7 +675,11 @@ not a fitted constant.
 ### 2026-09-21 (Claude Code): the sharpened CHECK trigger -- IMPLEMENTED and VALIDATED
 Built as the previous entry concluded: keep MARGIN, replace GAP.  binom_core gains _err_bounds()
 and a second tag; both triggers are computed in the same pass, `sharp` picks which one drives the
-verdict (core.screen(..., sharp=True), cusps_fast.py --sharp).  Default is still the old rule.
+verdict.  DEFAULT SINCE 2026-09-21: the sharpened trigger, in core.screen and in cusps_fast.py;
+cusps_fast.py --legacy-trigger puts the GAP proxy back, and validate_trigger.py passes sharp
+explicitly so it keeps comparing the two whatever the default is.  Re-validated after the flip:
+same 195,062/181/0, same 0 newly flagged, and n=1400..1450 generated with the new default is
+byte-identical to the same range generated with --legacy-trigger (62.4 s vs 73.2 s on 8 workers).
 
 THE BOUND.  Swapping adjacent ranks of masses a,b moves S_- by f_a(a-np*) - f_b(b-np*).  So masses
 whose order double precision cannot resolve are grouped into maximal clusters; within a cluster of
@@ -713,6 +717,25 @@ regression test possible.  Measured per-n cost at n=3000: 51.0 s screening + 247
 86.3 s, against 55.2 s sharpened -- 1.56x.  EXTRAPOLATED from those measured pieces (screening
 ~n^2.6, checks ~n^3.0, certify ~n^1.05): 2.6x at n=5000, ~4x at n=8000, ~5x at n=10000.  The win
 grows because certification was overtaking screening.
+
+THE ONE GENUINE RE-RANKING FLAG, dissected (n=2590, i=791, j=2243, certified NOT).
+Worth recording because it is the whole mechanism in one example, and because it is NOT a deep-tail
+artefact.  p* = 0.5974588782672404, n p* = 1547.42.  The ambiguous cluster is k = 1530 and k = 1565,
+two of the LARGEST masses in the distribution (f = 0.01250077796 each), straddling the mean at
+-17.42 and +17.58.  Masses near-symmetric about n p* are near-equal, so this is structural, not
+accidental: the deviations sum to only 0.163.  Their true relative gap is 1.31e-12 (60 digits);
+double computes 2.84e-12 against a resolution threshold of 3.12e-12, i.e. 91% of it -- double gets
+the order right but has no way to know that.  Swapping them moves S_- by exactly 0.4375, and here
+the cluster bound EQUALS that exact effect (ratio 1.00) because the two sit on opposite sides of the
+mode, so |a_k| + |a_l| = |a_k - a_l|.  Against S_- = -7.47e-3 the possible perturbation is 59x the
+quantity whose sign is wanted, and since the perturbation moves S_- and S_+ together while
+kappa = 1452 * f(791) = 4.9e-195 is effectively zero, the cusp window S_- < 0 < S_- + kappa is
+infinitesimally narrow: genuinely undecidable in double, escalation correct and not merely cautious.
+NOT A DOUBLE TIE.  The cluster is itself the tie point p*(2590,1530,1565) = 0.597458878267249396,
+which sits 9.0e-15 (relative 1.5e-14) from p*(2590,791,2243) = 0.597458878267240398.  Two DISTINCT
+tie points agreeing to 14 digits, not one p* shared by two pairs.  The standing convention (flag any
+double tie found) is not violated, but this is the closest approach seen so far and is the mechanism
+by which one would announce itself.
 
 STATUS AND WHAT IS NOT DONE.  Zero disagreements is necessary, not sufficient; correctness rests on
 _err_bounds, which is derived but assumes lgamma and log are <= 2 ulp and exp <= 1 ulp.  The cluster

@@ -54,11 +54,12 @@ from binom_core import MARGIN, GAP, TINY, TAG_MIN
 
 HEADER = "n,i,j,pstar,E,F3,F3_sign,S_minus,S_plus,slope_left,slope_right,certified_by\n"
 
-def screen_n(n, sharp=False):
+def screen_n(n, sharp=True):
     """[(i,j,'MIN'|'CHECK')] for every tie point of n that is not decided NOT in double precision.
 
-    sharp=True uses the re-ranking cluster bound instead of the GAP near-tie proxy (binom_core);
-    it leaves every verdict unchanged and removes almost all of the interval arithmetic.
+    sharp=True (the default) uses the re-ranking cluster bound instead of the GAP near-tie proxy
+    (binom_core); it leaves every verdict unchanged and removes almost all of the interval
+    arithmetic.  --legacy-trigger puts the old proxy back, for reproducing pre-2026-09-21 runs.
     """
     r = core.screen(n, collect_all=False, sharp=sharp)
     return [(int(r['i'][t]), int(r['j'][t]), 'MIN' if r['tag'][t] == TAG_MIN else 'CHECK')
@@ -150,13 +151,15 @@ if __name__ == "__main__":
     ap.add_argument("--merge-nmin", type=int); ap.add_argument("--merge-nmax", type=int)
     ap.add_argument("--recheck", nargs=3, type=int, metavar=("N","I","J"))
     ap.add_argument("--dps", type=int, default=50)
-    ap.add_argument("--sharp", action="store_true",
-                    help="use the sharpened re-ranking CHECK trigger (see RESEARCH_LOG)")
+    ap.add_argument("--legacy-trigger", action="store_true",
+                    help="use the pre-2026-09-21 GAP near-tie proxy instead of the sharpened "
+                         "re-ranking trigger; same verdicts, far more interval arithmetic")
     a = ap.parse_args()
     if a.recheck: recheck(*a.recheck, dps=a.dps); sys.exit()
     if a.merge: merge(a.out, a.split_mb, a.merge_nmin, a.merge_nmax, a.slim); sys.exit()
     os.makedirs(a.out, exist_ok=True)
-    screen_n(10, a.sharp)                            # compile the kernel once in the parent
+    sharp = not a.legacy_trigger
+    screen_n(10, sharp)                              # compile the kernel once in the parent
     workers = cpu_count() if a.workers == "auto" else int(a.workers)
     ns = list(range(a.nmax, a.nmin-1, -1))
     weight = {n: n**3 for n in ns}; total_w = sum(weight.values())
@@ -164,9 +167,9 @@ if __name__ == "__main__":
     if already: print(f"resuming: {len(already)} of {len(ns)} values of n already done", flush=True)
     t0 = time.time(); done = 0; tot = 0; done_w = sum(weight[n] for n in already); last = t0
     print(f"screening n={a.nmin}..{a.nmax} with {workers} workers (largest n first)"
-          + ("  [sharpened CHECK trigger]" if a.sharp else ""), flush=True)
+          + ("" if sharp else "  [LEGACY GAP trigger]"), flush=True)
     with Pool(workers) as pool:
-        for n, cnt, dt in pool.imap_unordered(work, [(n, a.out, a.sharp) for n in ns]):
+        for n, cnt, dt in pool.imap_unordered(work, [(n, a.out, sharp) for n in ns]):
             done += 1
             if cnt >= 0: tot += cnt; done_w += weight[n]
             now = time.time()

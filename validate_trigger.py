@@ -57,7 +57,7 @@ def sweep(ns):
           f"{'maxR dropped':>13} {'maxR all':>11}")
     bad = 0
     for n in ns:
-        r = core.screen(n, collect_all=True)
+        r = core.screen(n, collect_all=True, sharp=False)   # so tag=old, tag_alt=new
         told, tnew, rb = r['tag'], r['tag_alt'], r['rbnd']
         o = told == C; nw = tnew == C
         drop = o & ~nw; add = (~o) & nw
