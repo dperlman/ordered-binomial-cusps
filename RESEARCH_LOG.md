@@ -638,20 +638,31 @@ MEASUREMENTS (max over 20-30 random tie points per n; T denotes sum_k |w_k f_k (
   950-4250x and would have flagged everything.  Recorded because the failure mode is the point:
   a bound calibrated by guesswork is useless even when it is valid.
 
-WARNING, and it matters beyond this trigger.  Sm is accumulated by PLAIN summation in _one_tie (E
-gets Neumaier compensation, Sm does not), so the rigorous worst-case rounding bound is (n+1)*eps*T.
-Against MARGIN = 1e-6 that gives:
-      n=1000  bound 2.7e-09  MARGIN/bound  373
-      n=2000  bound 1.5e-08  MARGIN/bound   65
-      n=3000  bound 4.3e-08  MARGIN/bound   23
-      n=5000  bound 1.5e-07  MARGIN/bound  6.5
-      n=8000  bound 5.0e-07  MARGIN/bound  2.0
-      n=12000 bound 1.4e-06  MARGIN/bound  0.7   <-- rigorously exhausted
-So MARGIN = 1e-6 is rigorously defensible to roughly n = 10,000 and no further.  The OBSERVED error
-is ~4x under the worst case (slack 3.2-5.1x across all n measured), so in practice there is more
-room -- MARGIN/observed is still 9 at n=8000 -- but nothing in the pipeline currently checks this,
-and the cusp tables at n<=3000 sit at MARGIN/bound = 23, which is sound.  ACTION for any run past
-n~8000: either compensate the Sm accumulation (cheap: Neumaier, as E already has) or raise MARGIN.
+THE RIGOROUS BOUND, and a correction to two claims I made while deriving it.
+The bound on the error of S_- has two terms, T = sum|w f a|:
+      summation (Sm is accumulated PLAIN; E is compensated)   (n+1)*eps*T
+      mass error (each f carries relative error <= delta_f)   delta_f*T,  delta_f ~ 0.18*eps*n^1.4
+Against MARGIN = 1e-6:
+      n        T        summation    mass term    total     MARGIN/total
+      1000  1.21e+04   2.69e-09     7.66e-09     1.04e-08      97
+      2000  3.47e+04   1.54e-08     5.80e-08     7.34e-08      13.6
+      3000  6.43e+04   4.28e-08     1.90e-07     2.32e-07       4.3
+      5000  1.40e+05   1.55e-07     8.42e-07     9.97e-07       1.0
+      8000  2.85e+05   5.07e-07     3.32e-06     3.83e-06       0.3
+CORRECTION 1: I first reported MARGIN/bound using the summation term ALONE, giving 23 at n=3000 and
+"exhausted near n=12000".  Including the mass term, which DOMINATES by ~6x, the true figures are 4.3
+at n=3000 and exhaustion near n=5000.
+CORRECTION 2: I proposed compensating the Sm accumulation as the fix, and it is not.  Implemented and
+measured: it changes the OBSERVED error not at all (old 4.12e-09 total over 7 sampled ties, new
+4.24e-09) because the mass error dominates the observed error by ~140x, and it reduces the RIGOROUS
+bound only from 3.83e-06 to 3.32e-06 at n=8000 -- 13%, on a bound that exceeds MARGIN either way.
+It costs 6-8% runtime and breaks byte-identity with every existing file.  REVERTED.
+WHAT IS ACTUALLY TRUE: the rigorous bound is loose by ~2000x (3.3e-06 against an observed 1.7e-09 at
+n=8000), because delta_f*T assumes every mass error aligns adversarially in sum_k w_k (df_k) a_k,
+and they do not.  The data is also nowhere near the threshold: the smallest |S| ever decided in
+double is 1.2e-05 at n=3000 and 1.9e-06 at n=8000, so the real safety factors are ~280 and ~1150
+against the observed error.  A USEFUL rigorous bound needs the cancellation in that sum accounted
+for -- that is the open piece of work, not compensation and not a bigger MARGIN.
 Compensating would reduce the rigorous bound to ~eps*T, i.e. MARGIN/bound ~ 2000 at n=8000, and is
 the obvious fix.
 
