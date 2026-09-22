@@ -592,3 +592,27 @@ turned out to be the wrong picture, and the right one is exact:
 - So the mass floor is set by the F3<0 population specifically, and a usable probabilistic bound
   needs that population's own structure -- not a generic crossing argument.  That ties the floor
   question directly to the open F3-sign question rather than being independent of it.
+
+### 2026-09-21 (Claude Code): kernel windowed, range widened to 0<=i<j<=n
+Two changes to the certified kernel, done in this order so the first could be validated against
+the existing data before the second changed what that data contains.
+- WINDOW.  Only masses at or above TINY matter; the rest are zeroed, contribute exactly 0.0 to
+  every sum, and sit as an equal block at the bottom of the ranking.  The masses fall away
+  monotonically from the mode, so the recurrence stops once it drops below TINY and every pass runs
+  over that window instead of [0,n].  Byte-identical by construction (adding exact 0.0 changes no
+  running sum, Neumaier compensation included) and verified so: rebuilding n=3..1000 reproduced all
+  998 per-n files and the interval-check log exactly.  Measured screening speedup 1.09x at n=1000,
+  1.36x at 2000, 1.60x at 3000 -- real but below the window fraction (74%/49%/31% of masses),
+  because the per-tie overhead does not shrink.  One trap handled: f[j]=f[i] is applied AFTER
+  zeroing and can rescue a j just under TINY, so the recurrence refuses to stop before reaching i
+  and j when f(i) is above TINY.  In 12,000 sampled ties i and j were never on opposite sides.
+- RANGE.  j<=n now.  Counts go from n^2/4 to n^2/4 + (n-1).  Validation: 997 of 998 per-n files for
+  n<=1000 byte-identical; the only change is n=3 gaining (1,3) at p*=0.6339745962, the one cusp this
+  family contains anywhere.  Nine new interval checks, all j=n, all NOT.  cusps_all.csv is now
+  1,591,533 cusps.
+- analyze_cusps.tie_points() also regenerated tie points with the old range.  Fixed: it is used for
+  nearest-neighbour gaps and intervening-tie counts, and the (i,n) points sit between the others in
+  p* order, so excluding them would have corrupted every such metric.
+- Parquet partitions rebuilt, n = 100..1000 by hundreds plus 2000..8000 by thousands.  Row counts
+  rise by exactly n-1; cusp counts are unchanged (n=1000: 353, n=2000: 709, n=3000: 1062), while
+  certified counts rise (n=3000: 247 -> 269) from the new j=n pairs needing interval arithmetic.

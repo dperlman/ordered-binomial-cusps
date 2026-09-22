@@ -18,9 +18,13 @@ from collections import defaultdict
 from binom_core import lnC_arr, E_half as _E_half     # single implementation, see binom_core.py
 
 def tie_points(n, lnC):
-    """all (p*, i, j) with 0<i<j<n, i+j>n, sorted by p*"""
+    """all (p*, i, j) with 0<=i<j<=n, i+j>n, sorted by p*
+
+    j<=n matters here: the pairs (i,n) are real tie points and they sit between the others in p*
+    order, so excluding them would corrupt every nearest-neighbour gap and intervening-tie count.
+    """
     i, j = np.triu_indices(n+1, 1)
-    m = (i >= 1) & (j <= n-1) & (i+j > n); i, j = i[m], j[m]
+    m = (i >= 1) & (i+j > n); i, j = i[m], j[m]
     p = 1/(1+np.exp(-(lnC[i]-lnC[j])/(j-i)))
     o = np.argsort(p, kind='stable'); return p[o], i[o], j[o]
 

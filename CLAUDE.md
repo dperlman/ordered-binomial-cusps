@@ -21,10 +21,8 @@ approaches and the open questions.  Append new results to it (with the n-range t
   every mass is in natural order and E = n p exactly, so E/n = p.  Those pairs hold no cusps for
   n>=4 (the common mass there is p*^n, far below the cusp mass floor), so cusps_all.csv is sound
   for n>=4; n=3 has one cusp, pair (1,3), that the old range never produced.
-  STATUS: cusps_fast.py and dump_ties.py still implement the OLD range (j<n) until the kernel is
-  next touched; the tie-point Parquet dumps are therefore missing n-1 rows per n.  The kernel
-  change is deliberately sequenced AFTER the pending performance work, so that work can still be
-  validated byte-for-byte against the current data.
+  DONE 2026-09-21: the kernel implements j<=n, cusps_all.csv carries n=3's cusp, and the Parquet
+  dumps were rebuilt.
 - A "cusp point" is a tie point that is a local minimum of E(n,.).  Test: with the left-side
   ranking (w_j = w_i - 1), S_- = sum_k w_k f(k)(k - n p*) and S_+ = S_- + (j-i) f(i);
   cusp <=> S_- < 0 < S_+.  One-sided slopes are E'_± = S_± / (p* (1-p*)).
@@ -99,7 +97,9 @@ approaches and the open questions.  Append new results to it (with the n-range t
 ## Status
 - Cusp tables complete for n<=3000 (cusps_n3000.csv.gz): 1,591,532 cusps, 0 UNRESOLVED.  Complete
   under the widened convention too for n>=4 (see Background); n=3's single cusp is absent.
-- Tie-point Parquet dumps use the old j<n range and are missing the (i,n) rows -- rebuild pending.
+- Tie-point Parquet dumps rebuilt under the widened range (n = 100..1000 by hundreds, 2000..8000
+  by thousands).  The kernel screens only the TINY window per tie point, which is byte-identical to
+  the full pass and 1.1-1.6x faster over n=1000..3000.
 - Tie-point Parquet dumps exist for n = 100, 200, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000
   (schema v3: row 0 of each is the p=1/2 symmetry axis; see RESEARCH_LOG.md section 8).
 - Results, counts and timings are in RESEARCH_LOG.md section 8 (log entries).

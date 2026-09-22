@@ -10,7 +10,7 @@ for p* > 1/2 and n up to NMAX.  Parallel over n, resumable (one file per n).
 
 Definitions
   f_p(k)  = C(n,k) p^k (1-p)^(n-k),  k = 0..n
-  p*      = tie point of masses i<j (0<i<j<n, i+j>n so p*>1/2):  f(i)=f(j);
+  p*      = tie point of masses i<j (0<=i<j<=n, i+j>n so p*>1/2):  f(i)=f(j);
             rho = p*/(1-p*) = (C(n,i)/C(n,j))^(1/(j-i))
   w_k     = rank of f(k) in increasing order (0 = smallest).  Left of p*: w_j = w_i - 1.
   E(n,p)  = sum_k w_k f_p(k)
