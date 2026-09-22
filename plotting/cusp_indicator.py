@@ -45,8 +45,8 @@ def main():
     ap.add_argument("--n", type=int, required=True)
     ap.add_argument("--data", default="data")
     ap.add_argument("--out", default="plots")
-    ap.add_argument("--width", type=int, default=10000)
-    ap.add_argument("--height", type=int, default=6000)
+    ap.add_argument("--width", type=int, default=6000)
+    ap.add_argument("--height", type=int, default=3000)
     ap.add_argument("--cap", type=float, default=1e4,
                     help="|u| is capped here for display; u reaches 1e300 and cannot be plotted raw")
     a = ap.parse_args()

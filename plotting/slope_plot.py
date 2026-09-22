@@ -86,7 +86,7 @@ def main():
     ap.add_argument("--n", type=int, required=True)
     ap.add_argument("--x", choices=["p", "index", "both"], default="both")
     ap.add_argument("--data", default="data"); ap.add_argument("--out", default="plots")
-    ap.add_argument("--width", type=int, default=10000); ap.add_argument("--height", type=int, default=6000)
+    ap.add_argument("--width", type=int, default=6000); ap.add_argument("--height", type=int, default=3000)
     ap.add_argument("--ymin", type=float, default=-30); ap.add_argument("--ymax", type=float, default=120)
     ap.add_argument("--cmin", type=float, default=-30, help="log10 f(i) floor for the colour scale")
     ap.add_argument("--cmap", default="viridis")

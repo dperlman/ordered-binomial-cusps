@@ -18,7 +18,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, required=True)
     ap.add_argument("--data", default="data"); ap.add_argument("--out", default="plots")
-    ap.add_argument("--width", type=int, default=10000); ap.add_argument("--height", type=int, default=6000)
+    ap.add_argument("--width", type=int, default=6000); ap.add_argument("--height", type=int, default=3000)
     ap.add_argument("--cmin", type=float, default=-30)
     ap.add_argument("--color", choices=["mass", "mass-auto", "width"], default="mass",
                     help="mass: log10 f(i) over [cmin,0]; mass-auto: log10 f(i) with the range fitted "

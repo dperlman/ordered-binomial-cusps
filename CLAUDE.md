@@ -86,6 +86,14 @@ approaches and the open questions.  Append new results to it (with the n-range t
   D and the gap columns.  Use it rather than recomputing -- it encodes two numerical rules
   (normalised masses, and never subtracting S_plus-S_minus).  See RESEARCH_LOG.md section 7 (data architecture).
 - analyze_cusps.py (numpy only): analyses straight off cusps_all.csv; writes analysis/.
+- plotting/: plots to plots/.  plotting/_style.py holds the shared defaults -- DEFAULT RESOLUTION IS
+  6000x3000 (changed 2026-09-22 from 10000x6000, which was larger than anything needed).  It also
+  holds marker_size(), which sizes markers to ~3x the point spacing: these plots routinely put ~5000
+  points on the x axis, where a 1 px marker at 1.1 px spacing produces moire.  Markers slightly WIDER
+  than the spacing, alpha < 1, antialiasing on, and NEVER a connecting line through dense points.
+  Default x axis is LINEAR so all ~5000 values of n get their own column of pixels; --logx for the
+  power laws.
+- plotting/lowest_cusp.py: the minimum-E cusp of each n -- its E-E(1/2), its p*, and its width.
 - Cusp decisions are certified (double-precision screen with margin 1e-6, mpmath interval
   arithmetic for borderline cases).  Descriptive columns (E, F3, slopes) are double precision.
 - Validated: n<=200 reproduces an independent 50-digit run exactly.

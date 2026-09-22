@@ -36,7 +36,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", default="cusps/cusps_all.csv")
     ap.add_argument("--out", default="plots"); ap.add_argument("--k", type=int, default=3)
-    ap.add_argument("--width", type=int, default=10000); ap.add_argument("--height", type=int, default=6000)
+    ap.add_argument("--width", type=int, default=6000); ap.add_argument("--height", type=int, default=3000)
     a = ap.parse_args()
     import matplotlib; matplotlib.use("Agg")
     import matplotlib.pyplot as plt
