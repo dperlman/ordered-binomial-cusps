@@ -107,8 +107,13 @@ approaches and the open questions.  Append new results to it (with the n-range t
   per-n files and the interval-check log were byte-identical to the old script's output.
 
 ## Status
-- Cusp tables complete for n<=3000 (cusps_n3000.csv.gz): 1,591,532 cusps, 0 UNRESOLVED.  Complete
-  under the widened convention too for n>=4 (see Background); n=3's single cusp is absent.
+- Cusp tables complete for n<=5000 (cusps_n5000.csv.gz, 292 MB): 4,421,154 cusps, 47,299 with F3<0
+  (1.07%), 0 UNRESOLVED.  Complete under the widened convention, n=3's cusp included.  The n<=3000
+  portion is byte-identical to the archived cusps_n3000.csv.gz.  n=3001..5000 was the first range
+  generated with the sharpened CHECK trigger as the default: 399 interval checks over those 2000
+  values of n, and only 94 rows in the whole 4.4M table were certified by mpmath rather than double.
+  Run: 9 h 08 m on 8 workers (2026-09-21/22).  cusps/ is now 1.3 GB (672 MB of per-n CSVs plus the
+  672 MB merged file).
 - Tie-point Parquet dumps rebuilt under the widened range (n = 100..1000 by hundreds, 2000..8000
   by thousands).  The kernel screens only the TINY window per tie point, which is byte-identical to
   the full pass and 1.1-1.6x faster over n=1000..3000.
@@ -116,30 +121,50 @@ approaches and the open questions.  Append new results to it (with the n-range t
   (schema v3: row 0 of each is the p=1/2 symmetry axis; see RESEARCH_LOG.md section 8).
 - Results, counts and timings are in RESEARCH_LOG.md section 8 (log entries).
 
-## Data publication policy (three tiers) -- keep to this
-The public repo is github.com/dperlman/ordered-binomial-cusps.  Generated data is large and
-reproducible, so it is NOT committed.  Anything new follows one of three tiers:
+## Data publication policy -- keep to this
+The public repo is github.com/dperlman/ordered-binomial-cusps.  It offers exactly two things: the
+CODE AND THE ACCUMULATED KNOWLEDGE to generate these tables at any n, and a FIXED-SIZE SAMPLE of
+what the output looks like.  It deliberately does NOT offer the full tables.  They are gigabytes,
+they regenerate from the code in hours, and when they WERE published as GitHub release assets
+(5 releases, 762 MB, 2026-09-20..22) every single asset recorded ZERO downloads.  Those releases
+were deleted on 2026-09-22 and the release mechanism is not used.  The local frontier (cusps/,
+data/, analysis/, the *.csv.gz archives, currently ~4 GB) simply stays local.
 
-- Tier 1 -- committed, always, as CSV text (~0.5 MB total).  Small curated summaries that let
-  someone reproduce the plots without downloading anything: public/per_n_summary.csv (one row per n)
-  and public/cusps_decade.csv (cusps for n=100,200,500,1000,2000).  Built ONLY by
-  make_public_data.py so they are reproducible and auditable, never hand-edited.  Text, not Parquet:
-  line diffs keep history small when they are regenerated.
-- Tier 2 -- committed, but rarely.  Mid-size derived tables (~1 MB) such as
-  public/negF3_neighbors.csv.  Re-commit only when the results actually change, not after every
-  rerun; each new version costs its full size in history forever.
-- Tier 3 -- GitHub Releases, NEVER in git history.  The big archives (cusps_n1000.csv.gz 11 MB,
-  cusps_n2000.csv.gz 45 MB) and per-n Parquet tie files.  Release assets live outside the repo, so
-  they do not affect clone size, and they get stable download URLs.  Tag one release per milestone
-  (v1.0-n2000 = the n<=2000 tables); a longer run means a NEW release, not a new version of a file.
+Committed data is divided by SHAPE, not by size, because shape is what determines growth:
+
+- RESULT -- one row per n.  Aggregates, counts, extremes; no raw rows.  Grows LINEARLY in n
+  (~164 bytes per n), so it MAY track the local frontier freely: it is the finding itself.
+  Currently: public/per_n_summary.csv (n=3..5000).
+- SAMPLE -- one row per cusp.  Raw rows, so it shows what the output actually looks like.  Grows
+  as n^2, or per n added to the list, so it is PINNED and does NOT move when the frontier moves.
+  Currently: public/cusps_decade.csv (n=100,200,500,1000,2000,3000,4000,5000) and
+  public/cusps_F3_negative.csv (F3<0 cusps with nearest-cusp metrics, n<=3000).
+
+THE PINS ARE FINAL.  DECADE and F3_NMAX in make_public_data.py were set on 2026-09-22 and are not
+to be raised as a routine consequence of a longer run -- that is exactly the drift the policy
+exists to stop.  Raising one is a deliberate decision by the user, re-measured against the bands.
+
+SIZE BANDS, enforced in make_public_data.py rather than merely written here (prose is advice an
+agent can rationalise past; sys.exit is not):
+      <= 1 MB   fine
+      1-2 MB    fine, mention it in the commit message
+      2-5 MB    HUMAN DISCRETION -- refused unless a PERSON passes --allow-large
+      >  5 MB   HARD STOP -- does not go in git, at any size, for any reason
 
 Rules that keep this working:
-- Never git-add anything under cusps/, data/ (except manifest.csv), analysis/, or a *.csv.gz.
-  .gitignore enforces this; do not override it with `git add -f`.
+- Never git-add anything under cusps/, data/, analysis/, or a *.csv.gz.  .gitignore enforces this;
+  do not override it with `git add -f`.
+- public/ is built ONLY by make_public_data.py, never hand-edited, so it is reproducible.  It
+  changes only for a bug fix or a column-schema change -- NOT because n grew.
+- ALL committed text is LF.  Python's csv module defaults to the 'excel' dialect (CRLF) on every
+  platform, so every writer passes lineterminator="\n" explicitly.  Never let CRLF back in.
 - git-lfs is deliberately NOT used: on a public repo its bandwidth quota is billed to the owner for
-  everyone else's clones, and it breaks clones for anyone without lfs installed.  Use a Release.
+  everyone else's clones, and it breaks clones for anyone without lfs installed.
 - Regenerate rather than restore.  Every ignored path has its rebuild command in .gitignore.
-- If an artifact is too big for Tier 1 but someone needs it offline, it is Tier 3, not Tier 2.
+- Cost check: the whole repo with full history is ~2.3 MB to clone.  Note that git stores blobs
+  zlib- AND delta-compressed, so an APPENDED CSV costs far less than its raw size -- 12 versions of
+  the three public tables, 10.65 MB of raw content, pack into under 2 MB.  Do not reason about
+  history cost from raw file sizes; measure it with a probe clone and `git gc`.
 
 ## Conventions
 - Never assume "double ties" (two pairs with the same p*) — none exist for n<=1000 (checked

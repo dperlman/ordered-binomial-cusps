@@ -44,15 +44,15 @@ separate 50-digit computation exactly.
 
 ## Current results
 
-- Certified cusp tables complete for `n <= 3000`: **1,591,532 cusps**, 17,081 of them with `F3 < 0`.
+- Certified cusp tables complete for `n <= 5000`: **4,421,154 cusps**, 47,299 of them with `F3 < 0`.
 - Tie-point datasets (*every* tie point, not just cusps) for `n` = 100…1000 by hundreds, then
   1000…8000 by thousands — up to 16 million rows each.
-- `E(p*) > E(1/2)` at **every one** of those 1.6 million cusps, which is the conjecture below
+- `E(p*) > E(1/2)` at **every one** of those 4.4 million cusps, which is the conjecture below
   holding numerically as far as we have looked.
 
-Downloads are on the [releases page](https://github.com/dperlman/ordered-binomial-cusps/releases):
-cusp tables as CSV, tie-point datasets as Parquet. Small curated summaries are committed directly
-under [`public/`](public/) so most plots need no download at all.
+This repository publishes the **code and the method**, plus a fixed-size **sample** of the output
+under [`public/`](public/) — enough to reproduce most plots with no download at all. The full
+tables are not published: they are gigabytes, and the code regenerates them in a few hours.
 
 ## The open questions
 
@@ -94,4 +94,4 @@ rebuild command in [`.gitignore`](.gitignore).
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE). The datasets in the releases are covered by the same terms.
+MIT — see [`LICENSE`](LICENSE). The sample tables under `public/` are covered by the same terms.

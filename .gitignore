@@ -17,15 +17,13 @@ __pycache__/
 #   analysis/         analyze_cusps.py cusps/cusps_all.csv --out analysis/
 cusps/
 analysis/
-# (note: 'data/*' not 'data/', so the negation below can take effect)
-data/*
-!data/manifest.csv
+data/
 cusps_n*.csv.gz
 
 # analyze_cusps outputs copied to the top level for convenience.
 # Leading slash = root only, so the curated copies in public/ are still tracked.
 /per_n_summary.csv
-/negF3_neighbors.csv
+/cusps_F3_negative.csv
 /all_neighbors.csv
 
 # --- plot outputs (large PNGs; regenerate with plotting/*.py) ---

@@ -5,7 +5,7 @@ analyze_cusps.py -- analyses over a merged cusp table (cusps_all.csv or slim par
 
 Writes to --out:
   per_n_summary.csv      one row per n: counts, extremes, gap to E(1/2)
-  negF3_neighbors.csv    every F3<0 cusp with nearest-cusp distance metrics
+  cusps_F3_negative.csv  every F3<0 cusp with nearest-cusp distance metrics
   all_neighbors.csv      nearest-cusp distance metrics for ALL cusps (for baselines)
   summary.txt            headline numbers and outlier lists
 Needs only numpy.  Tie points are regenerated per n (vectorised), not read from disk.
@@ -84,10 +84,12 @@ def main():
         if n % 200 == 0: print(f"  n={n} done ({time.time()-t0:.0f}s)", flush=True)
     # write outputs
     with open(os.path.join(a.out, "per_n_summary.csv"), 'w', newline='') as f:
-        w = csv.DictWriter(f, fieldnames=list(per_n[0].keys())); w.writeheader(); w.writerows(per_n)
-    for name, sel in (("all_neighbors.csv", nb_rows), ("negF3_neighbors.csv", [r for r in nb_rows if r['F3_sign'] == '-'])):
+        w = csv.DictWriter(f, fieldnames=list(per_n[0].keys()), lineterminator="\n")
+        w.writeheader(); w.writerows(per_n)
+    for name, sel in (("all_neighbors.csv", nb_rows), ("cusps_F3_negative.csv", [r for r in nb_rows if r['F3_sign'] == '-'])):
         with open(os.path.join(a.out, name), 'w', newline='') as f:
-            w = csv.DictWriter(f, fieldnames=list(nb_rows[0].keys())); w.writeheader(); w.writerows(sel)
+            w = csv.DictWriter(f, fieldnames=list(nb_rows[0].keys()), lineterminator="\n")
+            w.writeheader(); w.writerows(sel)
     # summary
     neg = [r for r in nb_rows if r['F3_sign'] == '-']; pos = [r for r in nb_rows if r['F3_sign'] == '+']
     L = []

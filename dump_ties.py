@@ -147,7 +147,7 @@ def build(n, data, force=False, verify=None, workers=1, pool=None):
                 seconds=round(dt, 2), built=time.strftime("%Y-%m-%dT%H:%M:%S"))
     mf = os.path.join(data, "manifest.csv"); new = not os.path.exists(mf)
     with open(mf, 'a', newline='') as fh:
-        w = csv.DictWriter(fh, fieldnames=list(line))
+        w = csv.DictWriter(fh, fieldnames=list(line), lineterminator="\n")
         if new: w.writeheader()
         w.writerow(line)
     return line

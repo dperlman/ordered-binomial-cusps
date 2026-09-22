@@ -125,14 +125,21 @@ PROMISING (the main reduction):
 ## 5. Open questions / next steps
 
 - Prove (★), starting with the first-switch case.
-- Extend cusp tables to n<=5000; check whether negative-F3 cusps remain "close" and whether max
-  cusp p* stays ~0.65.  (n<=2000 done; tie-point dumps exist at n=3000,4000,5000.)
+- **COME BACK TO THIS** (flagged by the user 2026-09-22, deferred until the data-tier housekeeping
+  is finished): interpret the n<=5000 analysis.  The run is DONE and the numbers are in the
+  2026-09-22 entry -- max cusp p* flat at 0.6521-0.6523 from n=1250 to 5000 with no drift toward
+  0.66; F3<0 rate pinned at 1.07% across every scale; the F3<0 "always close to another cusp"
+  signature unchanged over 2.8M new cusps (median n*gap 0.045 vs 0.499, median 101 intervening ties
+  vs 1109); closest cusp to E(1/2) still always in band i+j=n+1 and min (E-E(1/2))*n down to 0.0068.
+  These are interesting and have NOT been discussed or followed up.
+- DONE 2026-09-22: cusp tables extended to n<=5000; negative-F3 cusps do remain "close" and max
+  cusp p* does stay ~0.652.  (See the entry for that date.)
 - DECIDED 2026-09-21: the tie-point convention is 0<=i<j<=n.  The kernel (cusps_fast.py,
   dump_ties.py) still implements j<n and must be updated, then the Parquet dumps rebuilt and the
   tie-point release re-issued; n=3's cusp (1,3) added.  Sequenced after the performance work so
   that work can be validated byte-for-byte first.
-- Decide on the sharpened CHECK trigger (section 8): prototyped, 99% reduction with 0 disagreements
-  at n<=1000, but the error constants are not yet derived and it is NOT in use.
+- DONE 2026-09-21: the sharpened CHECK trigger is derived, validated (0 disagreements on all
+  195,243 recorded verdicts; 0 newly flagged over ~14.6M tie points) and is now the DEFAULT.
 - Conjecture (section 8, 2026-09-21): a cusp's pair mass f(i) is bounded below, ~1e-7 for n<=3000.
   How that floor moves with n is NOT established -- the low tail fits no law (see the correction
   there); only the bulk is clean, at n^-1/2.  If a bound were provable it would let the generator
@@ -753,3 +760,53 @@ bound is loose for c = 2 with both masses on the SAME side of the mode, where th
 |f_k a_k - f_l a_l| rather than f_k|a_k| + f_l|a_l|; tightening that is available but bought only one
 tie point in 195,243, so it was left alone.  Existing tables need no regeneration -- the verdicts are
 identical, so n<=3000 stands as generated.
+
+### 2026-09-22 (Claude Code): cusp tables to n<=5000, and the data policy rebuilt
+THE RUN.  n=3001..5000 generated in 9 h 08 m (32,878 s) on 8 workers, resuming from n<=3000; the
+projection from the measured screening curve (5.09e-8 * n^2.595 single core, 7.16x on 8 workers) was
+9.2 h.  n<=5000 complete: 4,421,154 cusps, 47,299 with F3<0 (1.07%), 0 UNRESOLVED.  The n<=3000
+portion is byte-identical to the archived table.  First range generated with the sharpened trigger
+as the default: 399 interval checks over 2000 values of n, and only 94 rows in the entire 4.4M table
+were certified by mpmath rather than double.  Cusps per n is almost exactly LINEAR, 0.354*n.
+Sizes: cusps/ 672 MB of per-n CSVs + 672 MB merged; cusps_n5000.csv.gz 292 MB.
+
+ANALYSIS (analysis/summary.txt; NOT yet interpreted -- see the flag in section 5):
+- max cusp p* FLAT at 0.6521-0.6523 from n=1250 to 5000, overall max 0.65693.  No drift toward 0.66.
+- F3<0 rate pinned at 1.07% in every n-range, including the 2.83M new cusps.
+- The F3<0 signature is unchanged: median n*gap 0.045 vs 0.499 for F3>0, median intervening ties
+  101 vs 1109, median percentile-at-n 27 vs 51.
+- Closest cusp to E(1/2) still ALWAYS in the first band (i+j=n+1); min (E-E(1/2))*n fell to 0.0068.
+
+THE DATA POLICY, rebuilt (user decisions 2026-09-22).  Three tiers became two KINDS, divided by
+shape rather than size, because shape determines growth.  RESULT = one row per n, linear, may track
+the frontier.  SAMPLE = one row per cusp, n^2, PINNED.  Full statement in CLAUDE.md.
+- GitHub Releases DROPPED.  All 5 releases deleted (762 MB of assets).  Every asset across all of
+  them had recorded ZERO downloads, and half were duplicates (v1.1 and v1.2 each carried full copies
+  of the same three archives).  Tags kept as code snapshots.  The repo now offers the code and the
+  knowledge plus a pinned sample; the frontier stays local.
+- PINS SET AND FINAL: DECADE = 100,200,500,1000,2000,3000,4000,5000 (extending it to include 4000
+  and 5000 cost a measured 215 KiB of clone size); F3_NMAX = 3000.
+- negF3_neighbors.csv RENAMED to cusps_F3_negative.csv -- the old name read as "the list of all
+  cusps" when it is the F3<0 subset, 17,081 rows out of 1,591,533 (1.07%).  Content unchanged.
+- data/manifest.csv dropped from git: a local build log (wall-clock seconds, build timestamps)
+  indexing Parquet dumps nobody outside can obtain.  Still written locally.
+- Size bands (<=1 MB fine / 1-2 note it / 2-5 human discretion / >5 hard stop) are now ENFORCED by
+  sys.exit in make_public_data.py, not just documented.  It refused cusps_F3_negative.csv on its
+  first run and demanded --allow-large from a person, which is the intended behaviour.
+
+A MEASUREMENT THAT CORRECTS THE OLD POLICY.  It claimed "each new version costs its full size in
+history forever".  That is wrong by ~5x: git stores blobs zlib- AND delta-compressed, and these
+tables GROW BY APPENDING, so consecutive versions share nearly everything.  Measured: 12 versions of
+the three public tables, 10.65 MB of raw content, pack into 1.95 MB; the whole repo with full
+history is 2.3 MB to clone, of which code and prose are 0.22 MB.  Committing the 7.67 MB n<=5000
+F3 table would have added 1.96 MB, not 7.67 MB.  Never reason about history cost from raw file
+size -- measure it with a probe clone and `git gc`.
+
+LINE ENDINGS.  All four CSV writers (analyze_cusps.py x2, make_public_data.py, dump_ties.py) now
+pass lineterminator="\n".  Python's csv module defaults to the 'excel' dialect, which is CRLF on
+EVERY platform regardless of os.linesep -- that is RFC 4180 conformance, not a platform bug, and it
+is deliberately NOT environment-dependent (output must be reproducible across machines, which is
+what every byte-identity check in this project relies on).  All four committed CSVs had silently
+been CRLF while the multi-GB generated tables were LF, because cusps_fast.py formats rows with
+f-strings instead of using csv.  That mismatch made `cmp` between a public file and its source
+table fail on 2407 lines that were numerically identical to the last digit.

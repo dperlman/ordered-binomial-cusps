@@ -28,16 +28,16 @@ Merge options: `--split-mb 25` splits the output into parts (with `cusps/cusps_m
 
 Small curated tables are committed under `public/` (built by `make_public_data.py`):
 
-| file | rows | what |
-|---|---|---|
-| `public/per_n_summary.csv` | 1,998 | one row per n: counts, extremes, gap to E(1/2) |
-| `public/cusps_decade.csv` | 1,346 | all cusps for n = 100, 200, 500, 1000, 2000 |
-| `public/negF3_neighbors.csv` | 7,639 | every F3<0 cusp with nearest-cusp metrics |
+| file | kind | rows | what |
+|---|---|---|---|
+| `public/per_n_summary.csv` | result | 4,998 | one row per n: counts, extremes, gap to E(1/2) |
+| `public/cusps_decade.csv` | sample | 5,588 | all cusps for n = 100, 200, 500, 1000, 2000, 3000, 4000, 5000 |
+| `public/cusps_F3_negative.csv` | sample | 17,081 | every F3<0 cusp with nearest-cusp metrics, n <= 3000 |
 
-The full tables are attached to GitHub Releases rather than stored in the repo, so cloning stays
-cheap.  See the releases page for `cusps_n2000.csv.gz` (n=3..2000, 707,417 cusps, 45 MB) and
-`cusps_n1000.csv.gz` (n=3..1000, 176,816 cusps, 11 MB).  Everything else -- `cusps/`, `data/`,
-`analysis/` -- is regenerated locally by the commands above.
+The full tables are NOT published: they are gigabytes and they regenerate from the code above in
+hours.  The samples are pinned at those n and do not grow as the local tables are extended, so the
+repository stays about 2.3 MB to clone.  Everything else -- `cusps/`, `data/`, `analysis/` -- is
+regenerated locally by the commands above.
 
 ## Recompute any row at high precision
     .venv/bin/python cusps_fast.py --recheck 34 12 30 --dps 50
