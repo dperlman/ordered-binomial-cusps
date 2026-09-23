@@ -86,6 +86,13 @@ approaches and the open questions.  Append new results to it (with the n-range t
   D and the gap columns.  Use it rather than recomputing -- it encodes two numerical rules
   (normalised masses, and never subtracting S_plus-S_minus).  See RESEARCH_LOG.md section 7 (data architecture).
 - analyze_cusps.py (numpy only): analyses straight off cusps_all.csv; writes analysis/.
+- check_collisions.py: the double-tie check.  --parquet (the complete tie dumps), --cusps (cusps of
+  every n), --exhaustive NMAX --workers 8 (EVERY tie point of every n<=NMAX).  Cost is ~n^3;
+  n<=8000 is 8.5 min on 8 workers.
+- ALWAYS pass --workers to long compute.  Jobs the agent launches inherit a reduced QoS and a
+  single-threaded one lands on the efficiency cores while the performance cores idle; the same
+  n<=1500 scan is 15.7 s serial and 3.0 s on 8 workers (711% CPU), because the pool spills onto the
+  performance cores.
 - plotting/: plots to plots/.  plotting/_style.py holds the shared defaults -- DEFAULT RESOLUTION IS
   6000x3000 (changed 2026-09-22 from 10000x6000, which was larger than anything needed).  It also
   holds marker_size(), which sizes markers to ~3x the point spacing: these plots routinely put ~5000
@@ -175,9 +182,14 @@ Rules that keep this working:
   history cost from raw file sizes; measure it with a probe clone and `git gc`.
 
 ## Conventions
-- Never assume "double ties" (two pairs with the same p*) — none exist for n<=1000 (checked
-  separately by the user), but flag any if found.  (For n<=2000 no two cusps share a p* at double
-  precision; that is not a full check over all tie points.)
+- "Double ties" (two different (i,j) pairs with the same p*): NONE EXIST FOR n<=8000.  Settled
+  2026-09-23 by check_collisions.py over all 42,674,665,999 tie points of every n from 3 to 8000.
+  This is not a float comparison: double precision CANNOT decide it (the closest distinct tie points
+  at n=7329 are 2.2e-16 apart, 1 ulp, and computed p* carries up to ~4e-12 error for narrow pairs).
+  The float pass is only a screen at 1e-9; every pair below that is decided EXACTLY by p-adic
+  valuations -- (i,j) and (k,l) collide iff (l-k)(v_p C(n,i) - v_p C(n,j)) = (j-i)(v_p C(n,k) -
+  v_p C(n,l)) for every prime p<=n, with v_p from Legendre's digit-sum formula.  Still unproved in
+  general; flag any found above n=8000.
 - Dependencies: install freely into the project venv (.venv) with .venv/bin/pip, within reason --
   well-known, actively maintained packages that earn their place (numpy, mpmath, numba, pyarrow,
   matplotlib and the like).  Prefer a package over hand-rolling something it already does well.

@@ -810,3 +810,43 @@ what every byte-identity check in this project relies on).  All four committed C
 been CRLF while the multi-GB generated tables were LF, because cusps_fast.py formats rows with
 f-strings instead of using csv.  That mismatch made `cmp` between a public file and its source
 table fail on 2407 lines that were numerically identical to the last digit.
+
+### 2026-09-23 (Claude Code): NO DOUBLE TIES for n<=8000 -- exhaustive and EXACT
+Question: can two different pairs (i,j) and (k,l) share a tie point p* at the same n?  Answer, over
+all 42,674,665,999 tie points of every n from 3 to 8000: no.
+
+WHY A FLOAT CHECK IS NOT ENOUGH, and this is the point of the entry.  The closest DISTINCT tie
+points found are 2.2e-16 apart (n=7329) -- one ulp -- and 4.4e-16 at n=6000, 6.7e-16 at n=5331.
+Meanwhile the computed p* itself carries error up to ~4e-12 for narrow pairs, because
+lnrho = (lnC[i]-lnC[j])/(j-i) cancels two numbers of size ~n ln2 and the cancellation costs a factor
+n/m.  So beyond n~2000, "the gap is zero" and "the gap is tiny" are indistinguishable in double, and
+a pure float scan would be reporting a confidence it does not have.
+
+THE EXACT TEST.  rho^(j-i) = C(n,i)/C(n,j), so (i,j) and (k,l) collide iff
+    (C(n,i)/C(n,j))^(l-k) == (C(n,k)/C(n,l))^(j-i),
+an identity between integers.  Do NOT form them (C(5000,2500) has ~1500 digits, raised to a power of
+thousands).  Take p-adic valuations: it holds iff for EVERY prime p<=n
+    (l-k)(v_p C(n,i) - v_p C(n,j)) == (j-i)(v_p C(n,k) - v_p C(n,l)),
+with v_p C(n,k) = (S_p(k) + S_p(n-k) - S_p(n))/(p-1) by Legendre, S_p = digit sum in base p.  No big
+integers, and almost every candidate dies on the first prime.  The first 12 primes are tested
+vectorised in numpy over all candidates at once; only survivors reach the scalar sweep.
+
+WHAT WAS CHECKED.
+- The 17 complete tie-point dumps (n=100..8000), 51.7M tie points: 1.35M candidate pairs below the
+  1e-9 screen, all proved distinct.
+- Cusp-cusp, every n<=5000, 4.4M cusps: minimum gap 1.489e-09, i.e. not one pair was even a
+  candidate.  Cusps are far better separated than tie points in general.
+- EXHAUSTIVE: every tie point of every n<=8000, 4.27e10 of them, 511 s on 8 workers.  Candidates
+  below the screen grow as ~n^4 (6 at n=501, 2415 at n=2001, 626,191 at n=7995; ~1e9 in total).
+  Zero collisions.  An independent single-threaded run to n<=5000 agreed.
+The screen at 1e-9 is ~250x the worst-case numeric error in p*, so it cannot miss a true collision.
+
+TOWARD A PROOF.  The valuation identity is probably the right entry point: it turns "two tie points
+coincide" into "two distinct pairs have proportional binomial-coefficient exponent vectors", a
+statement about factorisations rather than about real numbers.  Not attempted.
+
+PERFORMANCE NOTE.  The first exhaustive run was single-threaded and the user observed it sitting on
+the efficiency cores with the performance cores idle.  Jobs launched by the agent inherit a reduced
+QoS; taskpolicy -c only clamps downward so it cannot be promoted from inside.  A worker pool sidesteps
+it -- the same n<=1500 scan is 15.7 s serial and 3.0 s on 8 workers (711% CPU).  Always parallelise
+long compute rather than trying to raise its priority.
