@@ -71,11 +71,18 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     n, i, j, dE, p, band, w = load(a.summary)
     ms = st.marker_size(len(n), width_px=a.width)
-    assert (band == 1).all(), "band is no longer identically 1 -- the colouring rationale changed"
     ev = n % 2 == 0
     cE = dE*n**1.5; cP = (p - 0.5)*2*(n + 1)
     m = n >= 1000
-    sub = (f"band $i+j-n$ = 1 for all {len(n)} values of $n$; "
+    # Report the bands actually present rather than trusting the observation that they are all 1.
+    # The parity legend below ("n even -> width odd") is only valid in band 1: w = n + b - 2i, so
+    # width parity follows n+b, not n.  If other bands ever appear, that legend needs rethinking.
+    bands = np.unique(band)
+    bandtxt = (f"band $i+j-n$ = {bands[0]} for all {len(n)} values of $n$"
+               if len(bands) == 1 else
+               f"bands present: {', '.join(map(str, bands[:6]))}"
+               + ("..." if len(bands) > 6 else "") + " -- THE PARITY LEGEND ASSUMES BAND 1")
+    sub = (bandtxt + "; "
            f"$(E-E_{{1/2}})\\,n^{{3/2}} \\to$ {np.median(cE[m&ev]):.4f} (even), "
            f"{np.median(cE[m&~ev]):.4f} (odd)")
 
@@ -118,8 +125,10 @@ def main():
     setx(ax, a)
     if a.logx: ax.set_yscale('log')
     ax.set_xlabel("$n$"); ax.set_ylabel(r"width $j-i$ of the lowest cusp")
-    ax.set_title("Lowest cusp of each $n$: its width\n"
-                 r"the band is always 1 ($i+j=n+1$), so the width is the only free parameter")
+    ax.set_title("Lowest cusp of each $n$: its width\n" +
+                 ("band is always 1 ($i+j=n+1$), so the width is the only free parameter"
+                  if len(bands) == 1 and bands[0] == 1 else
+                  f"bands present: {list(bands[:6])}"))
     ax.grid(alpha=0.25, which='both')
     legend(ax, extra=[Line2D([], [], color='0.25', lw=3, ls='--',
                              label=f"${c:.4f}\\,\\sqrt{{n}}$")])
