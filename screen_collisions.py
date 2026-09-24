@@ -118,7 +118,7 @@ def find_partner(n, val, lnC, i, j, m, M, target):
     return hits
 
 def one_n(args):
-    n, verify = args
+    n, verify = args[0], args[1]
     val = Valuation(n)
     prevp = prev_prime_array(n)
     lnC = np.array([lgamma(n+1)-lgamma(k+1)-lgamma(n-k+1) for k in range(n+1)])
@@ -136,13 +136,15 @@ def one_n(args):
         for b in range(a+1, len(S)):
             if S[a][4] == S[b][4] and S[a][5] == S[b][5]:
                 hits.append((n, S[a][0], S[a][1], S[b][0], S[b][1]))
-    return n, len(S), hits
+    return n, len(S), hits, [(n, x[0], x[1], x[2], x[0]+x[1]-n, x[4]) for x in S]
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--nmax", type=int, default=1000)
     ap.add_argument("--nmin", type=int, default=3)
     ap.add_argument("--workers", default="auto")
+    ap.add_argument("--save", metavar="CSV",
+                    help="write the catalogue of simplifying tie points to this CSV")
     ap.add_argument("--verify", action="store_true",
                     help="also run the UNRESTRICTED scan at each n and confirm Fact C missed nothing")
     a = ap.parse_args()
@@ -152,10 +154,12 @@ def main():
           + ("  [--verify: Fact C checked against the full scan at every n]" if a.verify else ""),
           flush=True)
     t0 = time.time(); tot_s = 0; allhits = []; done = 0
+    save = [] if a.save else None
     with Pool(w) as pool:
-        for n, ns_count, hits in pool.imap_unordered(one_n, [(n, a.verify) for n in ns],
+        for n, ns_count, hits, rows in pool.imap_unordered(one_n, [(n, a.verify) for n in ns],
                                                      chunksize=4):
             tot_s += ns_count; done += 1; allhits += hits
+            if save is not None: save.extend(rows)
             if hits or done % 2000 == 0:
                 print(f"  [{done}/{len(ns)}  {time.time()-t0:.0f}s]  n={n}  "
                       f"simplifying so far {tot_s}" + (f"  HITS {hits}" if hits else ""), flush=True)
@@ -166,6 +170,12 @@ def main():
     if miss:
         print(f"\n*** FACT C FAILED at {len(miss)} values of n ***")
         for m_ in miss[:10]: print("   ", m_)
+    if save is not None:
+        save.sort()
+        with open(a.save, "w") as fh:
+            fh.write("n,i,j,width,band,true_root_order\n")
+            for r in save: fh.write(",".join(map(str, r)) + "\n")
+        print(f"catalogue of {len(save)} simplifying tie points -> {a.save}")
     print("\n" + "="*70)
     if real:
         print(f"*** COLLISIONS FOUND: {len(real)} ***")

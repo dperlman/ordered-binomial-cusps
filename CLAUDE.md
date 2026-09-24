@@ -204,8 +204,13 @@ Rules that keep this working:
   valuations -- (i,j) and (k,l) collide iff (l-k)(v_p C(n,i) - v_p C(n,j)) = (j-i)(v_p C(n,k) -
   v_p C(n,l)) for every prime p<=n, with v_p from Legendre's digit-sum formula.  Still unproved in
   general; flag any found above n=10000.  Cost is ~N^3: 17 min to 10,000, ~2.4 h to 20,000, ~2 days
-  to 55,000, and memory binds near n~30,000 at 8 workers.  RESEARCH_LOG's 2026-09-23 search entry
-  has a prime-gap argument that would cut this by ~1000x IF it survives a careful write-up.
+  to 55,000, and memory binds near n~30,000 at 8 workers.
+- SEPARATELY, screen_collisions.py (TIER 2 -- exhaustive only IF Fact C holds, see RESEARCH_LOG
+  2026-09-23) found NO collisions for n<=100,000: 9.44 h on 8 workers, examining 1.1e11 pairs, which
+  is 0.13% of the 8.3e13 tie points in that range.  Fact C is written out and tested (including a
+  --verify mode that compares the restricted window against the unrestricted scan at every n; they
+  agree to n=1500).  DO NOT conflate the two ranges: n<=10,000 is unconditional, 10,000..100,000
+  rests on Fact C.
 - Dependencies: install freely into the project venv (.venv) with .venv/bin/pip, within reason --
   well-known, actively maintained packages that earn their place (numpy, mpmath, numba, pyarrow,
   matplotlib and the like).  Prefer a package over hand-rolling something it already does well.

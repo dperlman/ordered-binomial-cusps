@@ -1062,3 +1062,28 @@ as n^3.2 -- years at 100,000.  Fixes, in order of payoff:
   (c) the later stages still built whole length-n valuation arrays for a handful of survivors;
       evaluating Legendre pointwise on the survivors only gave another ~1.5x.
 Now: 4.9 s to n<=4000, 20 s to n<=8000, 59 s to n<=12000.
+
+### 2026-09-24 (Claude Code): no collisions for n<=100,000 under Fact C (TIER 2)
+Ran screen_collisions.py over every n from 3 to 100,000.  Started Wed 22:14:54, finished Thu
+07:41:26: 33,992 s = 9.44 h on 8 workers, exit 0.
+  163,529 simplifying tie points found.  ZERO collisions.
+  Pairs examined ~1.10e11, against 8.33e13 tie points in the range -- 0.132% of them.  A Tier 1
+  scan of the same range would have been ~25 days, so Fact C bought a factor of ~64.
+STATUS: this is TIER 2.  It is exhaustive if and only if Fact C holds.  n<=10,000 remains the
+unconditional result (Tier 1, 1018 s, previous entry).  Do not quote the two as one number.
+
+TIMING ESTIMATE WAS 2.5x OPTIMISTIC, and the reason is worth recording.  I predicted 2-4 h from
+timings at n<=12,000 (59 s) using an exponent fitted between n=4,000 and n=12,000 (~2.4-2.6).  The
+true exponent from 12,000 to 100,000 is 3.05 -- essentially n^3.  Per-n fixed costs (two sieves,
+eight valuation arrays, and an n-length lgamma list comprehension built whether or not it is needed)
+all scale with n and sum to O(N^2) with a large constant, and the per-candidate cost is worse than
+the theory suggested.  Contrast the n=10,000 Tier 1 prediction, which was accurate to 2% because it
+was anchored on a MEASURED run at n=8,000 -- a 1.25x extrapolation instead of an 8x one.  Rule:
+anchor a projection on a measured point close to the target, or do not quote it.
+
+CATALOGUE -- AND A MISTAKE.  The simplifying tie points are the screen's natural side product, and
+I had described them as such, but one_n returned only len(S), so the overnight run COUNTED 163,529
+of them and saved none.  --save was added afterwards.  Regenerating costs what the original run
+cost for that range: n<=20,000 is 4.4 min (27,544 rows, saved to simplifying_n20000.csv), n<=50,000
+~1.2 h (76,211 rows), the full n<=100,000 ~9.4 h.  Rows grow ~linearly in N while cost grows as
+N^3, so the cheap ranges are cheap per row and the last fifth of the range costs half the time.

@@ -31,3 +31,4 @@ plots/
 
 # --- run logs (never tracked; regenerate the run instead) ---
 *.log
+simplifying_n*.csv
