@@ -123,17 +123,36 @@ def find_partner(n, val, lnC, i, j, m, M, target):
                 hits.append((i2, j2))
     return hits
 
+def _entry(n, val, i, j):
+    """(i, j, m, d, M, reduced exponent vector) for one reducing tie point, exactly."""
+    m = j - i
+    e = [val.v(int(p), i) - val.v(int(p), j) for p in val.primes]
+    ge = 0
+    for x in e: ge = gcd(ge, x)
+    d = gcd(m, ge)
+    return (i, j, m, d, m//d, tuple(x//d for x in e))
+
 def one_n(args):
     n, verify = args[0], args[1]
+    no_fact_c = len(args) > 2 and args[2]
     val = Valuation(n)
     prevp = prev_prime_array(n)
     lnC = np.array([lgamma(n+1)-lgamma(k+1)-lgamma(n-k+1) for k in range(n+1)])
-    S = simplifying_at(n, val, prevp)
+    if no_fact_c:
+        # TIER 1, float-free: every pair examined by verify_fact_c.brute_force (integer arithmetic
+        # only, every width, every i), so the reducing set does not depend on Fact C at all.
+        from verify_fact_c import brute_force
+        S = sorted(_entry(n, val, i, j) for (i, j) in brute_force(n, val))
+    else:
+        S = simplifying_at(n, val, prevp)
     if verify:
         full = simplifying_at(n, val, prevp, restrict=False)
         if {(x[0], x[1]) for x in S} != {(x[0], x[1]) for x in full}:
+            # MUST return the same 4-tuple shape as the normal path: main() unpacks four values.
+            # (It returned three until 2026-09-24, so a Fact C miss would have crashed the run
+            # with an unpacking error instead of being reported.  Caught by external review.)
             return n, len(S), [("FACT-C-MISS", sorted({(x[0],x[1]) for x in full} -
-                                                      {(x[0],x[1]) for x in S}))]
+                                                      {(x[0],x[1]) for x in S}))], []
     hits = []
     for (i, j, m, d, M, target) in S:                   # partner of each simplifying point
         for (i2, j2) in find_partner(n, val, lnC, i, j, m, M, target):
@@ -151,18 +170,22 @@ def main():
     ap.add_argument("--workers", default="auto")
     ap.add_argument("--save", metavar="CSV",
                     help="write the catalogue of simplifying tie points to this CSV")
+    ap.add_argument("--no-fact-c", action="store_true",
+                    help="TIER 1: find reducing points by exhaustive brute force instead of the "
+                         "Fact C window -- slower, and independent of Fact C")
     ap.add_argument("--verify", action="store_true",
                     help="also run the UNRESTRICTED scan at each n and confirm Fact C missed nothing")
     a = ap.parse_args()
     w = cpu_count() if a.workers == "auto" else int(a.workers)
     ns = list(range(a.nmax, a.nmin-1, -1))
     print(f"screening n={a.nmin}..{a.nmax} on {w} workers"
+          + ("  [--no-fact-c: TIER 1, reducing points by brute force]" if a.no_fact_c else "")
           + ("  [--verify: Fact C checked against the full scan at every n]" if a.verify else ""),
           flush=True)
     t0 = time.time(); tot_s = 0; allhits = []; done = 0
     save = [] if a.save else None
     with Pool(w) as pool:
-        for n, ns_count, hits, rows in pool.imap_unordered(one_n, [(n, a.verify) for n in ns],
+        for n, ns_count, hits, rows in pool.imap_unordered(one_n, [(n, a.verify, a.no_fact_c) for n in ns],
                                                      chunksize=4):
             tot_s += ns_count; done += 1; allhits += hits
             if save is not None: save.extend(rows)
@@ -187,8 +210,13 @@ def main():
         print(f"*** COLLISIONS FOUND: {len(real)} ***")
         for h in real[:50]: print("   ", h)
         sys.exit(1)
-    print("NO COLLISIONS found by the Fact C screen.")
-    if miss: sys.exit(1)
+    if miss:
+        print("NO COLLISION VERDICT: Fact C failed at the n listed above, and partner search is")
+        print("skipped wherever the window missed, so the screen proves nothing about those n.")
+        sys.exit(1)
+    print("NO COLLISIONS found " + ("(TIER 1: reducing points by exhaustive brute force; does NOT "
+                                    "depend on Fact C)." if a.no_fact_c else
+                                    "by the Fact C screen (TIER 2: exhaustive iff Fact C holds)."))
 
 if __name__ == "__main__":
     main()

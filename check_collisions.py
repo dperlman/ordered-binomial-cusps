@@ -78,26 +78,41 @@ def same_tie_point(val, i, j, k, l):
     return True
 
 def screen(n, i, j, p, tol, val=None, label=""):
-    """Sort by p*, exact-check every consecutive pair closer than tol.  Returns list of collisions."""
+    """Sort by p*, exact-check EVERY pair closer than tol.  Returns (collisions, min gap, #pairs).
+
+    Every pair, not just sorted neighbours.  Until 2026-09-24 this compared only consecutive
+    pairs, which is NOT sound: two tie points A and C that collide exactly still have computed p*
+    differing by rounding, and a near-miss B can land between them in float order; then (A,B) and
+    (B,C) are tested and (A,C) never is.  (Caught by external review.)  The fix walks offsets
+    k = 1, 2, ... and takes every pair (a, a+k) with p[a+k] - p[a] < tol.  It stops at the first
+    k with no such pair, which is safe because p is sorted: p[a+k+1]-p[a] >= p[a+k]-p[a] >= tol.
+    """
     o = np.argsort(p, kind='stable'); i, j, p = i[o], j[o], p[o]
     g = np.diff(p)
-    cand = np.flatnonzero(g < tol)
+    ia, ib = [], []
+    k = 1
+    while k < len(p):
+        idx = np.flatnonzero(p[k:] - p[:-k] < tol)
+        if not len(idx): break
+        ia.append(idx); ib.append(idx + k)
+        k += 1
     hits = []
-    n_cand = len(cand)
-    if n_cand:
-        val = val or Valuation(n)
-        i1, j1 = i[cand].astype(np.int64), j[cand].astype(np.int64)
-        i2, j2 = i[cand+1].astype(np.int64), j[cand+1].astype(np.int64)
-        A, B = (j2 - i2), (j1 - i1)                 # (l-k) and (j-i)
-        alive = np.ones(n_cand, bool)
-        for q in val.primes[:12]:                   # vectorised prefilter on the small primes
-            V = val.vec(int(q))
-            alive &= (A*(V[i1] - V[j1]) == B*(V[i2] - V[j2]))
-            if not alive.any(): break
-        for c in np.flatnonzero(alive):             # survivors: full prime sweep, exact
-            if same_tie_point(val, int(i1[c]), int(j1[c]), int(i2[c]), int(j2[c])):
-                hits.append((n, int(i1[c]), int(j1[c]), int(i2[c]), int(j2[c]),
-                             float(p[cand[c]])))
+    if not ia:
+        return hits, (g.min() if len(g) else np.inf), 0
+    a_ = np.concatenate(ia); b_ = np.concatenate(ib)
+    n_cand = len(a_)
+    val = val or Valuation(n)
+    i1, j1 = i[a_].astype(np.int64), j[a_].astype(np.int64)
+    i2, j2 = i[b_].astype(np.int64), j[b_].astype(np.int64)
+    A, B = (j2 - i2), (j1 - i1)                     # (l-k) and (j-i)
+    alive = np.ones(n_cand, bool)
+    for q in val.primes[:12]:                       # vectorised prefilter on the small primes
+        V = val.vec(int(q))
+        alive &= (A*(V[i1] - V[j1]) == B*(V[i2] - V[j2]))
+        if not alive.any(): break
+    for c in np.flatnonzero(alive):                 # survivors: full prime sweep, exact
+        if same_tie_point(val, int(i1[c]), int(j1[c]), int(i2[c]), int(j2[c])):
+            hits.append((n, int(i1[c]), int(j1[c]), int(i2[c]), int(j2[c]), float(p[a_[c]])))
     return hits, (g.min() if len(g) else np.inf), n_cand
 
 def tie_points(n, lnC):
