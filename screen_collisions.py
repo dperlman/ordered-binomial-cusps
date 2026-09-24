@@ -25,6 +25,10 @@ def prev_prime_array(n):
     isp = np.zeros(n+1, bool); isp[primes_upto(n)] = True
     return np.maximum.accumulate(np.where(isp, np.arange(n+1), 0))
 
+N_STAGE1 = 8             # primes in the vectorised whole-array stage.  8 measured best:
+                         # more primes cut survivors (2400 -> 246 at 24 primes) but the whole-array
+                         # cost grows faster than the saving on the survivor stages.
+
 def _vp_at(n, p, ks):
     """v_p(C(n,k)) for an ARRAY of k, by Legendre, without building the whole length-n array."""
     return ((digit_sum_vec(ks, p) + digit_sum_vec(n - ks, p) - digit_sum(n, p)) // (p - 1))
@@ -59,9 +63,9 @@ def simplifying_at(n, val, prevp, restrict=True):
     iB, jB = _ranges_to_pairs(jv, loB, hiB)
     i = np.concatenate([iA, iB]); j = np.concatenate([jA, jB])
     if len(i) == 0: return []
-    key = i.astype(np.int64) * (n + 1) + j
-    _, uniq = np.unique(key, return_index=True)
-    i, j = i[uniq], j[uniq]
+    # NOTE: windows A and B can overlap, but the overlap is ~0.1% of candidates and testing one
+    # twice is harmless, so we do NOT deduplicate here -- np.unique on the full array was 26% of
+    # the per-n cost.  The few duplicates are removed from the (tiny) survivor list instead.
     m = j - i
     keep = (m >= 2) & (i + j > n) & (i >= 1) & (j <= n)
     i, j, m = i[keep], j[keep], m[keep]
@@ -73,7 +77,7 @@ def simplifying_at(n, val, prevp, restrict=True):
     # stage is vectorised, and almost nothing reaches Python.
     idx = np.arange(len(i))
     G = np.zeros(len(i), np.int64)
-    for lo_p, hi_p, whole in ((0, 8, True), (8, 32, False), (32, 160, False)):
+    for lo_p, hi_p, whole in ((0, N_STAGE1, True), (N_STAGE1, 64, False), (64, 256, False)):
         ps = val.primes[lo_p:hi_p]
         if len(ps) == 0 or len(idx) == 0: break
         for p in ps:
@@ -87,13 +91,15 @@ def simplifying_at(n, val, prevp, restrict=True):
         idx = idx[np.gcd(m[idx], G[idx]) > 1]
     alive = np.zeros(len(i), bool); alive[idx] = True
     out = []
+    seen = set()
     for t in np.flatnonzero(alive):                            # survivors only: full prime sweep
         ii, jj_, mm = int(i[t]), int(j[t]), int(m[t])
         e = [val.v(int(p), ii) - val.v(int(p), jj_) for p in val.primes]
         ge = 0
         for x in e: ge = gcd(ge, x)
         d = gcd(mm, ge)
-        if d > 1:
+        if d > 1 and (ii, jj_) not in seen:
+            seen.add((ii, jj_))
             out.append((ii, jj_, mm, d, mm//d, tuple(x//d for x in e)))
     return out
 
