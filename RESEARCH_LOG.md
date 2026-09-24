@@ -855,7 +855,29 @@ long compute rather than trying to raise its priority.
 The exhaustive check (previous entry) settles n<=8000 but costs ~N^3 cumulatively, so it stops
 there: N=50,000 would be 35 h and N=100,000 about 11 days, and the float pass also hits a memory
 wall near n~25,000 (it builds arrays of n^2/4 entries -- 15 GB at n=50,000).  This entry is about
-searching much further.  NOTHING HERE IS A PROOF OF NO COLLISIONS; it is a way to look.
+searching much further.
+
+WHAT RESTS ON WHAT -- read this before any of the timings below.  There are three tiers, and they
+are NOT three levels of confidence in the same method; two of them share one assumption exactly.
+  TIER 1, proof-grade.  Examine EVERY pair with the exact simplifying test, then apply Facts A and
+    B.  Both are proved, so a clean run proves no collisions in the range scanned, with no further
+    assumption.  This is what the n<=8000 result rests on.
+  TIER 2, rests on Fact C and nothing else.  Examine only pairs with width <= g(j) or band <= g(j),
+    where g(j) = j - prevprime(j).  Exhaustive IF AND ONLY IF Fact C holds.
+  TIER 3, extrapolation.  Use a constant cutoff (e.g. min(width,band) <= 3, the largest value ever
+    observed).  Fast, justified by nothing, and it can silently miss a collision.
+A BLANKET cutoff C = max prime gap below N is NOT a fourth tier: it is Tier 2 applied loosely.  It
+carries exactly the same dependence on Fact C and is ~9x slower than the per-j form, because the
+mean gap is 10.0 where the maximum is 113 (j<=10^6).  Do not present it as the safer option -- it
+buys no certainty, only cost.  It is recorded here only so nobody reinvents it.
+
+      COST TO SCAN EVERY n <= N, 8 workers
+      N          TIER 1 (proved)   TIER 2 (needs Fact C)
+      10,000     36 min            15 s
+      100,000    25 days           34 min
+      1,000,000  25,000 days       3.0 days
+So Fact C is worth about a factor of 1000 at N = 100,000.  That is the whole reason to write it out
+carefully rather than lean on it informally.
 
 NOTATION.  For a tie point (i,j) write the ODDS VALUE r = p*/(1-p*), so p* = r/(1+r) and two tie
 points collide exactly when their r agree.  Write WIDTH = j-i and BAND = i+j-n.  The defining
@@ -929,3 +951,16 @@ STATUS.
   OPEN:      whether Fact C survives a careful write-up.  If it does, this screen is exhaustive and
              n<=100,000 is half an hour.  If it does not, the screen is still a good search and a
              bad proof, and should be described that way.
+
+### 2026-09-23 (Claude Code): the cusp mass floor over n<=5000 -- a new record, 18x lower
+From plotting/mass_floor_linear.py (linear n axis, one pixel per n) over the complete table n=3..5000.
+- New smallest pair mass at any cusp: n=3076, (1476,1781), p*=0.52951, f(i) = 3.630e-9, against
+  6.56e-8 (n=1075) for n<=3000.  It is certified by interval arithmetic (iv50; S_- = -1.19e-7, below
+  MARGIN), and --recheck at 50 digits agrees: S_- = -1.1947e-7, S_+ = 9.878e-7, cusp True.  It also
+  has F3 < 0 (-1342.4).  Next smallest above n=3000: 4.43e-9 (n=4712), 5.15e-9 (n=4314); then a gap
+  to 2.24e-8 (n=4227).  The running minimum is flat at 3.63e-9 from n=3076 to 5000.
+- Refitted over n=300..5000: median ~ 0.592 n^-0.500 (log-log corr -1.000), unchanged.  Low tail
+  still follows no law: minimum ~ n^-1.57 (corr -0.60), 1st percentile ~ n^-0.98 (corr -0.31).
+  So the rare-event reading of the 2026-09-21 entry stands; the record simply moved.
+- n=2 has no cusp: its only tie point, (1,2) at p*=2/3, has S_- = 0 exactly (E = 4p-3p^2 just below,
+  2p just above).  n=3 is the first n with a cusp, so plots over n start there.
