@@ -901,8 +901,8 @@ pairs, and instead enumerate the simplifying ones and look for each one's partne
 search is cheap -- it must have the same M and the same reduced fraction, and if it does not itself
 simplify its width IS M, so Fact A makes it a binary search over that width.
 
-FACT C -- A PRIME OBSTRUCTION.  PROOF SKETCH, NOT YET WRITTEN OUT CAREFULLY; tested on all 314
-simplifying points with n<=400 and refuted by none.
+FACT C -- A PRIME OBSTRUCTION.  WRITTEN OUT AND TESTED 2026-09-23 (see the entry of that date for
+the full statement, the four tests, and the screen built on it).  It holds.
   C(n,i)/C(n,j) = j! (n-j)! / ( i! (n-i)! ).
   Let P be a prime with  max(i, n-i, j/2) < P <= j.  Then v_P(j!) = 1 (because j/2 < P <= j),
   v_P(i!) = 0 (P > i), v_P((n-i)!) = 0 (P > n-i), and v_P((n-j)!) = 0 (n-j < n-i < P).
@@ -1012,3 +1012,53 @@ COST OF GOING FURTHER at Tier 1 (~N^3): 2.4 h to 20,000, 8 h to 30,000, ~2 days 
 binds first: each worker holds n^2/4 entries, 3.75 GB per worker at n=25,000, so 8 workers need
 ~40 GB there (69 GB available).  Fewer workers trades speed for headroom.  The prime-gap argument
 in the previous entry would replace this with ~34 min to 100,000, but only if it holds up.
+
+### 2026-09-23 (Claude Code): FACT C written out, and the accelerated screen built on it
+STATEMENT.  Tie point (i,j), 0 <= i < j <= n, i+j > n; width m = j-i, band b = i+j-n.  Since
+C(n,k) = n!/(k!(n-k)!),
+        R = C(n,i)/C(n,j) = [ j! (n-j)! ] / [ i! (n-i)! ].
+  CLAIM.  Let P be a prime with  (1) P <= j,  (2) P > j/2,  (3) P > i,  (4) P > n-i.
+          Then v_P(R) = 1 EXACTLY.
+  PROOF.  v_P(j!) = floor(j/P) + floor(j/P^2) + ...  By (1)+(2), 1 <= j/P < 2 so floor(j/P) = 1;
+          by (2), P^2 > j^2/4 >= j for j >= 4, so every higher term vanishes: v_P(j!) = 1.
+          By (3) no multiple of P is <= i, so v_P(i!) = 0.  By (4), v_P((n-i)!) = 0.
+          j > i gives n-j < n-i < P, so v_P((n-j)!) = 0.  Hence v_P(R) = 1+0-0-0 = 1.   []
+  COROLLARY.  Such a P forces the point NOT to simplify: an exponent equal to 1 makes the gcd of
+  all exponents 1, so d = gcd(m,1) = 1 and the true root order M equals the width.
+  THE INTERVAL.  (1)-(4) say max(i, n-i, j/2) < P <= j, and max(i, n-i) < j always (i < j by
+  definition; n-i < j is exactly i+j > n).
+  CONTRAPOSITIVE.  If the point simplifies there is no prime in that interval.  Let P* be the
+  largest prime <= j.  Bertrand gives P* > j/2, so the j/2 term never binds and we need
+  P* <= max(i, n-i).  Therefore
+        min(width, band) = j - max(i, n-i)  <=  j - P*  =:  g(j).
+  SPECIAL CASE: j prime => P* = j => g(j) = 0 => the point can NEVER simplify.
+  EDGE CASE: v_P(j!) = 1 needs j >= 4; j <= 3 is checked directly.
+
+TESTS (all pass).
+  1. No simplifying point among the 314 with n<=400 has j prime.                       0 violations
+  2. All 314 satisfy min(width,band) <= g(j).                                          0 violations
+  3. v_P(R) == 1 for a qualifying P, on 2460 random non-simplifying pairs.             0 wrong
+  4. Bertrand numerically: prevprime(j) > j/2 for j = 4..2000.                         0 violations
+  5. THE ONE THAT MATTERS -- screen_collisions.py --verify runs the RESTRICTED window and the
+     UNRESTRICTED scan at every n and compares.  Identical at every n up to 1500 (1461 simplifying
+     points).  So the window provably-and-empirically loses nothing in that range.
+
+screen_collisions.py.  TIER 2: exhaustive iff Fact C holds.  Per n it examines only pairs with
+width <= g(j) or band <= g(j) -- 39,246 candidates at n=4000 against n^2/4 = 4,000,000, a 102x
+reduction.  Then Fact B: every collision has a simplifying partner, so for each simplifying point
+it searches for the partner, by binary search over width-M pairs (valid by Fact A's monotonicity)
+followed by exact exponent-vector comparison, plus a direct pairwise check among the simplifying
+points themselves.  The binary search is never exercised by real data (no collisions exist), so it
+was validated by PLANTING targets: 299 of 299 located.
+
+PERFORMANCE, and three mistakes worth recording.  The first version was 207 s to n<=2000 and scaled
+as n^3.2 -- years at 100,000.  Fixes, in order of payoff:
+  (a) the candidate list was built with a Python loop over j; np.repeat made it ~50x faster;
+  (b) the d>1 prefilter used a gcd over 8 primes, leaving ~2^-8 of candidates alive -- still ~80
+      per n, each costing a full Python sweep over pi(n) primes, which was 94% of the runtime.  An
+      ESCALATING filter (8 primes, then 32, then 160) cut that to almost nothing.  Valid because
+      the gcd over any SUBSET of primes is a multiple of the true gcd, so gcd(m, G_subset) = 1 is
+      always a sound rejection;
+  (c) the later stages still built whole length-n valuation arrays for a handful of survivors;
+      evaluating Legendre pointwise on the survivors only gave another ~1.5x.
+Now: 4.9 s to n<=4000, 20 s to n<=8000, 59 s to n<=12000.
