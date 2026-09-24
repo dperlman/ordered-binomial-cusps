@@ -964,3 +964,51 @@ From plotting/mass_floor_linear.py (linear n axis, one pixel per n) over the com
   So the rare-event reading of the 2026-09-21 entry stands; the record simply moved.
 - n=2 has no cusp: its only tie point, (1,2) at p*=2/3, has S_- = 0 exactly (E = 4p-3p^2 just below,
   2p just above).  n=3 is the first n with a cusp, so plots over n start there.
+
+### 2026-09-23 (Claude Code): primality of n or n+1 does not show in the cusp statistics
+prime_compare.py, n=100..5000.  Per n: cusp count, median and minimum of f(i).  Compared WITHIN a
+parity, since every prime above 2 is odd and n+1 prime forces n even: n prime vs odd composite n,
+and n+1 prime vs even n with n+1 composite.  Each statistic is detrended by the median of log s over
+same-parity neighbours within +-100 (self excluded); two-sided permutation p over 20,000 shuffles.
+      statistic   n prime vs odd comp.     n+1 prime vs even      residual SD
+      count       -0.02%   p=0.72          -0.00%   p=0.99         1.0%
+      median f    +0.06%   p=0.031         +0.00%   p=0.93         0.64%
+      min f       +1.5%    p=0.84          +14.5%   p=0.037        152%  (log units)
+- No effect of any practical size.  The two p~0.03 values are 2 of 6 tests (Bonferroni 0.008) and
+  are small against the spread: 0.06% on a 0.64% SD, 14% on a 152% SD.  The min-f one weakens to
+  p=0.15 for n>=1000.  Window +-30 gives the same picture.
+- Window +-300 invents a count/median "effect" (p~0.01) for BOTH primality classes at once.  That is
+  an artefact: a wide window mis-fits the trend's curvature at small n, where primes are densest.
+  Keep the window narrow for any test of this kind.
+- Parity itself (odd vs even, the control) also shows nothing in these three statistics, unlike the
+  E - E(1/2) of the lowest cusp, which splits cleanly by parity.
+- A prime-n strip under the linear mass-floor plot was tried first; the user found it not useful
+  and it was dropped.
+
+### 2026-09-23 (Claude Code): odd vs even n -- only the lowest cusp's height splits by parity
+parity_compare.py, n=100..5000, over every per-n column of public/per_n_summary.csv plus the
+median and minimum of f(i).  Sawtooth test: z(n) = s(n) - (s(n-1)+s(n+1))/2 cancels the trend, and
+delta = (mean z_odd - mean z_even)/2 is the odd-minus-even offset; permutation p over 20,000.
+- min_E_minus_Ehalf: odd n sit 41.24% HIGHER than even n, delta/scatter = 1.00, p < 5e-5.  This
+  is the known split (lowest_cusp.py: E-E(1/2) times n^1.5 is 0.6828 odd vs 0.4834 even; ratio
+  1.4125), recovered independently -- so the test does detect a real parity effect.
+- Everything else is null, |delta| <= 0.025 of the scatter, all p >= 0.10: n_cusps (-0.007%),
+  n_negF3, n_double_cusps, max_pstar, min_pstar, min_F3, median_slope_jump, min_slope_jump,
+  median f (+0.001%), min f.  n>=1000 gives the same picture.
+- So parity acts on how HIGH the lowest cusp sits above E(1/2), not on how many cusps there are or how their
+  masses and slope jumps are distributed.
+
+### 2026-09-23 (Claude Code): no double ties for n<=10000 (extends the n<=8000 result)
+Tier 1 throughout -- every pair examined, every pair double precision could not separate decided
+exactly by p-adic valuations.  Rests only on Facts A and B, both proved; no Fact C, no cutoff.
+  83,345,832,499 tie points, every n from 3 to 10000, 1018 s on 8 workers.  ZERO collisions.
+  Predicted 17 min from the measured 511 s at n<=8000 scaled by (10/8)^3; actual 1018 s.
+  Roughly 3e9 candidate pairs fell under the 1e-9 float screen and were decided exactly.
+FLOATS ARE NOW DEMONSTRABLY USELESS HERE, not just marginal.  At n=7500 and n=8333 the minimum gap
+between distinct tie points is EXACTLY 0.0 in double precision -- two different (i,j) pairs produce
+bit-identical p* -- and the exact check proves them distinct.  Any screen that stopped at the float
+comparison would now be reporting collisions that do not exist.
+COST OF GOING FURTHER at Tier 1 (~N^3): 2.4 h to 20,000, 8 h to 30,000, ~2 days to 55,000.  Memory
+binds first: each worker holds n^2/4 entries, 3.75 GB per worker at n=25,000, so 8 workers need
+~40 GB there (69 GB available).  Fewer workers trades speed for headroom.  The prime-gap argument
+in the previous entry would replace this with ~34 min to 100,000, but only if it holds up.

@@ -100,6 +100,18 @@ approaches and the open questions.  Append new results to it (with the n-range t
   than the spacing, alpha < 1, antialiasing on, and NEVER a connecting line through dense points.
   Default x axis is LINEAR so all ~5000 values of n get their own column of pixels; --logx for the
   power laws.
+- ONE PIXEL COLUMN PER n (2026-09-23) -- the default for EVERY plot with n on a linear x axis.  Use
+  plotting/_style.py NGrid: every n gets exactly k whole pixel columns (k = largest integer with
+  N*k <= 6000, so 1 px per n once N > 3000), so every per-n mark is exactly k px wide.  The FIGURE
+  WIDTH FOLLOWS THE n-RANGE (margins + N*k); height stays at the default.  The data are painted
+  into an RGBA array and placed with figimage -- no matplotlib resampling -- via g.points() (per-n
+  marks, k px wide by h px tall) and g.density() (clouds of many points per n, shaded by count per
+  pixel); curves, annotations and the legend go on g.ax.  Never bbox_inches="tight"; never change
+  xlim.  marker_size() is for --logx only, where uniform columns are impossible.  n ranges start at
+  the first n with data -- n=3 for cusps (n=2 has a tie point but no cusp).  Look at the PNG at
+  100%: a fit-to-window viewer resamples it and brings moire back.  Older scripts are NOT yet
+  converted; convert one when the user next asks for that plot.
+- plotting/mass_floor_linear.py: the first NGrid plot -- cusp pair mass vs n, n=3..5000.
 - plotting/lowest_cusp.py: the minimum-E cusp of each n -- its E-E(1/2), its p*, and its width.
 - Cusp decisions are certified (double-precision screen with margin 1e-6, mpmath interval
   arithmetic for borderline cases).  Descriptive columns (E, F3, slopes) are double precision.
@@ -182,14 +194,18 @@ Rules that keep this working:
   history cost from raw file sizes; measure it with a probe clone and `git gc`.
 
 ## Conventions
-- "Double ties" (two different (i,j) pairs with the same p*): NONE EXIST FOR n<=8000.  Settled
-  2026-09-23 by check_collisions.py over all 42,674,665,999 tie points of every n from 3 to 8000.
+- "Double ties" (two different (i,j) pairs with the same p*): NONE EXIST FOR n<=10000.  Settled
+  2026-09-23 by check_collisions.py over all 83,345,832,499 tie points of every n from 3 to 10000
+  (17 min on 8 workers; the n<=8000 portion was a separate earlier run and agreed).
   This is not a float comparison: double precision CANNOT decide it (the closest distinct tie points
-  at n=7329 are 2.2e-16 apart, 1 ulp, and computed p* carries up to ~4e-12 error for narrow pairs).
+  at n=7500 and n=8333 are BIT-IDENTICAL in double -- minimum gap exactly 0.0 -- and computed p*
+  carries up to ~5e-12 error for narrow pairs).
   The float pass is only a screen at 1e-9; every pair below that is decided EXACTLY by p-adic
   valuations -- (i,j) and (k,l) collide iff (l-k)(v_p C(n,i) - v_p C(n,j)) = (j-i)(v_p C(n,k) -
   v_p C(n,l)) for every prime p<=n, with v_p from Legendre's digit-sum formula.  Still unproved in
-  general; flag any found above n=8000.
+  general; flag any found above n=10000.  Cost is ~N^3: 17 min to 10,000, ~2.4 h to 20,000, ~2 days
+  to 55,000, and memory binds near n~30,000 at 8 workers.  RESEARCH_LOG's 2026-09-23 search entry
+  has a prime-gap argument that would cut this by ~1000x IF it survives a careful write-up.
 - Dependencies: install freely into the project venv (.venv) with .venv/bin/pip, within reason --
   well-known, actively maintained packages that earn their place (numpy, mpmath, numba, pyarrow,
   matplotlib and the like).  Prefer a package over hand-rolling something it already does well.
