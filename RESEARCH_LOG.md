@@ -850,3 +850,82 @@ the efficiency cores with the performance cores idle.  Jobs launched by the agen
 QoS; taskpolicy -c only clamps downward so it cannot be promoted from inside.  A worker pool sidesteps
 it -- the same n<=1500 scan is 15.7 s serial and 3.0 s on 8 workers (711% CPU).  Always parallelise
 long compute rather than trying to raise its priority.
+
+### 2026-09-23 (Claude Code): how to SEARCH for tie-point collisions -- a prime obstruction
+The exhaustive check (previous entry) settles n<=8000 but costs ~N^3 cumulatively, so it stops
+there: N=50,000 would be 35 h and N=100,000 about 11 days, and the float pass also hits a memory
+wall near n~25,000 (it builds arrays of n^2/4 entries -- 15 GB at n=50,000).  This entry is about
+searching much further.  NOTHING HERE IS A PROOF OF NO COLLISIONS; it is a way to look.
+
+NOTATION.  For a tie point (i,j) write the ODDS VALUE r = p*/(1-p*), so p* = r/(1+r) and two tie
+points collide exactly when their r agree.  Write WIDTH = j-i and BAND = i+j-n.  The defining
+equation is  r^width = C(n,i)/C(n,j).  So r is a width-th root of a fraction.
+
+FACT A (PROVED, algebra).  For a FIXED width, r is strictly increasing in i, so two tie points of
+the same width can never collide.  Proof: C(n,i)/C(n,j) = prod_{t=i+1}^{j} t/(n+1-t), and
+t/(n+1-t) is strictly increasing in t; sliding the window one step right drops the smallest factor
+and adds a larger one, so the product strictly increases.  Also checked numerically at several n.
+
+THE ROOT MAY SIMPLIFY.  x^6 = 4 is really x^3 = 2: a sixth root wearing a disguise.  Define the
+TRUE ROOT ORDER M = the least M>0 with r^M rational.  M always divides the width.  Concretely, with
+e_p the exponent of prime p in C(n,i)/C(n,j) and g = gcd_p e_p, we have M = width/gcd(width, g).
+Call a tie point SIMPLIFYING when M < width.  Measured: 314 of the 5,353,299 tie points with
+n<=400 simplify, about 1 in 17,000.
+
+FACT B (PROVED, a deduction from Fact A).  M is a property of the NUMBER r, so colliding tie points
+share it.  If neither simplifies then M = width for both, hence equal widths, which Fact A forbids.
+THEREFORE ANY COLLISION HAS AT LEAST ONE SIMPLIFYING PARTNER.  That is the reduction: stop comparing
+pairs, and instead enumerate the simplifying ones and look for each one's partner.  The partner
+search is cheap -- it must have the same M and the same reduced fraction, and if it does not itself
+simplify its width IS M, so Fact A makes it a binary search over that width.
+
+FACT C -- A PRIME OBSTRUCTION.  PROOF SKETCH, NOT YET WRITTEN OUT CAREFULLY; tested on all 314
+simplifying points with n<=400 and refuted by none.
+  C(n,i)/C(n,j) = j! (n-j)! / ( i! (n-i)! ).
+  Let P be a prime with  max(i, n-i, j/2) < P <= j.  Then v_P(j!) = 1 (because j/2 < P <= j),
+  v_P(i!) = 0 (P > i), v_P((n-i)!) = 0 (P > n-i), and v_P((n-j)!) = 0 (n-j < n-i < P).
+  So v_P of the ratio is EXACTLY 1, hence gcd_p e_p = 1, hence M = width: NOT simplifying.
+  The interval (max(i, n-i, j/2), j] has length  min(width, band, ceil(j/2)).
+  CONCLUSION: a simplifying tie point requires that interval to be PRIME-FREE, so
+      min(width, band)  <=  g(j) := j - (largest prime <= j).
+  This EXPLAINS the observed data rather than fitting it: over n<=400 the 314 simplifying points
+  have min(width,band) = 1 (286 of them), 2 (26) or 3 (2), and never more -- prime-free runs of
+  length 1-3 are common below 400, longer ones are not.
+
+WHY THIS MATTERS, AND A CORRECTION.  I first proposed identifying "the family" the 24 non-band-1
+simplifying points belong to.  The user pointed out that this is worthless: a family fitted to
+n<=400 says nothing about a new family at n=60,000, so the screen would stay an extrapolation with
+a better name.  That objection is correct.  Fact C is different in kind -- it is a reason a
+simplifying point CANNOT exist outside the prime gaps, not a description of where they have been
+seen.  If the sketch holds up, the screen becomes exhaustive rather than heuristic.
+
+THE SCREEN, AND ITS COST.  Per n: sieve the primes to n, compute g(j) = j - prevprime(j) for each j,
+and examine only pairs with width <= g(j) or band <= g(j).  NOTHING IS DOWNLOADED -- g(j) comes from
+a local sieve, and the per-j gap is far tighter than any blanket maximum (mean g is 10.0 for
+j<=10^6 against a maximum of 113).  Published maximal-gap tables would only be needed if we wanted
+a blanket bound beyond sieving range, which this formulation avoids.
+      N          pairs examined          8 workers      full n^2 scan for comparison
+      10,000     5.7e8                   15 s           36 min
+      100,000    7.8e10                  34 min         25 days
+      1,000,000  1.0e13                  3.0 days       25,000 days
+Measured throughput for the exact width-organised scan is 4.8M pairs/core-s (against 10.4M for the
+existing float-screen check, i.e. the exact scan is ~2x slower per pair but uses O(n) memory instead
+of O(n^2), so it does not hit the wall the float method does).
+
+SIDE PRODUCT: A TABLE OF SIMPLIFYING TIE POINTS.  The screen's primary output IS that table; finding
+collisions is a second step on top of it.  For n<=400 it has 314 rows, each carrying width, band,
+the true root order M and the reduced fraction.  15 of them have M=1, i.e. p* is EXACTLY RATIONAL --
+all of width 2, where the ratio is a perfect square: n=50 (48,50) gives r=35 and p*=35/36; n=289
+(287,289) gives r=204 and p*=204/205; n=244 (241,243) gives r=99 and p*=99/100.  The other 299 have
+M from 3 to 195, e.g. n=9 (2,8) is the cube root of 2 and n=259 (4,256) is the 42nd root of 2.
+(Width-1 tie points are rational too -- p* = (i+1)/(n+1) -- but trivially so, with M = width = 1, so
+they are not counted as simplifying.)
+
+STATUS.
+  PROVED:    Fact A; Fact B given Fact A; the band-1 identity C(n,i)/C(n,n+1-i) = (n+1-i)/i.
+  SKETCHED:  Fact C -- the argument is short and the five conditions on P look right, but it has not
+             been written out rigorously.  Verified against 314 cases, 0 counterexamples.
+  MEASURED:  the 1-in-17,000 rate, the min(width,band) <= 3 observation, all the timings.
+  OPEN:      whether Fact C survives a careful write-up.  If it does, this screen is exhaustive and
+             n<=100,000 is half an hour.  If it does not, the screen is still a good search and a
+             bad proof, and should be described that way.
