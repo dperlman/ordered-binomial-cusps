@@ -42,6 +42,8 @@ computation over the stated range, by the named program.  Dates are when the res
 | S11 | Cusps are exactly the upward zero crossings of E′; cusps and smooth maxima alternate. | n = 500, 1000, 3000 | log 2026-09-21 | 2026-09-21 |
 | S12 | E is concave between consecutive tie points. | n ≤ 100 | pre-repository work | ≤ 2026-09-20 |
 | S13 | The first tie point above ½ is the innermost pair. | n ≤ 200 | pre-repository work | ≤ 2026-09-20 |
+| S14 | Number of cusps above ½ ≈ 0.3537 n (within about ±5 of the fit at any n, worst ±20); over all of (0,1), ≈ 0.7074 n + 1 (mirror images plus the cusp at p = ½).  Empirical fit, not a formula. | 500 ≤ n ≤ 5000 | fit to `public/per_n_summary.csv` | 2026-09-24 |
+| S15 | Fraction of tie points that are cusps ≈ 1.415 / n (same leading term for the ⌊n²/4⌋ tie points above ½, all tie points in (0,1), or distinct p\* values).  Follows from S14. | 500 ≤ n ≤ 5000 | as S14 | 2026-09-24 |
 
 Screened results rest on the code being correct (S1–S3: externally reviewed and cross-checked
 against independent brute force) and on standard library functions (`lgamma`) behaving as documented.

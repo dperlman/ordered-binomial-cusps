@@ -1220,3 +1220,11 @@ plotting/max_pstar.py over the complete table n=3..5000 (plus the n=6000/7000/80
   result: 2/(2-3L) = 46.07 for L = 0.652195 (the drift per 3 steps is (i+2)/(n+3) - i/n ~
   (2-3L)/n).  A crude automatic reset detector gives mean spacing 47.3 over n=3000..4000 and 47.1
   over 4000..5000, but it misses resets at lower n (58 and 94 there), so it is not a test.
+
+### 2026-09-24 (Claude Code): cusp count and cusp fraction vs n (FACTS.md S14-S15)
+Least-squares fit of cusps per n (above 1/2) over n = 500..5000, public/per_n_summary.csv:
+  count ~ 0.35371 n - 0.22, residual sd 4.45, max |residual| 19.8.  Over all of (0,1) the mirror
+  images double it and the p = 1/2 axis adds one cusp: ~0.7074 n + 1.
+Tie points above 1/2 number floor(n^2/4) exactly, so the cusp fraction is ~4 * 0.35371 / n
+  = 1.4148 / n; the leading term is the same for all n(n+1)/2 tie points in (0,1) and for the
+  floor(n^2/2)+1 distinct p* values.  Empirical, not proved.
