@@ -2,6 +2,8 @@
 
 READ RESEARCH_LOG.md FIRST: it holds every established result, the proof reductions, the failed
 approaches and the open questions.  Append new results to it (with the n-range they were checked on).
+FACTS.md is the one-page list of what is PROVEN vs SCREENED, with ranges, programs and dates.  Keep it
+in step with the log: when a result is locked in or corrected, update both.  No proofs in FACTS.md.
 
 ## Background (math)
 - f_p(k) = C(n,k) p^k (1-p)^(n-k), k=0..n, are the binomial masses.
@@ -86,9 +88,8 @@ approaches and the open questions.  Append new results to it (with the n-range t
   D and the gap columns.  Use it rather than recomputing -- it encodes two numerical rules
   (normalised masses, and never subtracting S_plus-S_minus).  See RESEARCH_LOG.md section 7 (data architecture).
 - analyze_cusps.py (numpy only): analyses straight off cusps_all.csv; writes analysis/.
-- check_collisions.py: the double-tie check.  --parquet (the complete tie dumps), --cusps (cusps of
-  every n), --exhaustive NMAX --workers 8 (EVERY tie point of every n<=NMAX).  Cost is ~n^3;
-  n<=8000 is 8.5 min on 8 workers.
+- check_collisions.py / screen_collisions.py / verify_fact_c.py: the tie-point collision tools; see
+  Conventions below.
 - ALWAYS pass --workers to long compute.  Jobs the agent launches inherit a reduced QoS and a
   single-threaded one lands on the efficiency cores while the performance cores idle; the same
   n<=1500 scan is 15.7 s serial and 3.0 s on 8 workers (711% CPU), because the pool spills onto the
@@ -194,23 +195,20 @@ Rules that keep this working:
   history cost from raw file sizes; measure it with a probe clone and `git gc`.
 
 ## Conventions
-- "Double ties" (two different (i,j) pairs with the same p*): NONE EXIST FOR n<=10000.  Settled
-  2026-09-23 by check_collisions.py over all 83,345,832,499 tie points of every n from 3 to 10000
-  (17 min on 8 workers; the n<=8000 portion was a separate earlier run and agreed).
-  This is not a float comparison: double precision CANNOT decide it (the closest distinct tie points
-  at n=7500 and n=8333 are BIT-IDENTICAL in double -- minimum gap exactly 0.0 -- and computed p*
-  carries up to ~5e-12 error for narrow pairs).
-  The float pass is only a screen at 1e-9; every pair below that is decided EXACTLY by p-adic
-  valuations -- (i,j) and (k,l) collide iff (l-k)(v_p C(n,i) - v_p C(n,j)) = (j-i)(v_p C(n,k) -
-  v_p C(n,l)) for every prime p<=n, with v_p from Legendre's digit-sum formula.  Still unproved in
-  general; flag any found above n=10000.  Cost is ~N^3: 17 min to 10,000, ~2.4 h to 20,000, ~2 days
-  to 55,000, and memory binds near n~30,000 at 8 workers.
-- SEPARATELY, screen_collisions.py (TIER 2 -- exhaustive only IF Fact C holds, see RESEARCH_LOG
-  2026-09-23) found NO collisions for n<=100,000: 9.44 h on 8 workers, examining 1.1e11 pairs, which
-  is 0.13% of the 8.3e13 tie points in that range.  Fact C is written out and tested (including a
-  --verify mode that compares the restricted window against the unrestricted scan at every n; they
-  agree to n=1500).  DO NOT conflate the two ranges: n<=10,000 is unconditional, 10,000..100,000
-  rests on Fact C.
+- TIE-POINT COLLISIONS ("double ties": two different (i,j) at the same n with the same p*): NONE for
+  3 <= n <= 100,000.  See FACTS.md S1-S3 and RESEARCH_LOG 2026-09-24 for what each range rests on.
+  n <= 10,000 is confirmed by three independent methods; 10,000 < n <= 100,000 by screen_collisions.py,
+  resting on Facts A, B, C (all proved), the implementation, and lgamma behaving as documented.
+  Double precision CANNOT decide this question by itself: distinct tie points are bit-identical in
+  double at n=7500 and n=8333.  Every float step is either a screen followed by an exact check, or a
+  binary search with a provable margin.  Flag any collision found above n=100,000.
+- Collision tools.  check_collisions.py --exhaustive: float screen at 1e-9 + exact p-adic check of
+  EVERY pair within tol (was neighbours-only until 2026-09-24 -- unsound, fixed).  ~N^3; 26 min to
+  10,000.  screen_collisions.py: the Fact C screen; --save writes the catalogue of reducing tie
+  points; --no-fact-c finds reducing points by brute force instead (float-free, independent of Fact
+  C, ~34 min to 10,000); --verify compares the window against the unrestricted scan (O(n^2) memory,
+  small n only).  verify_fact_c.py: independent O(n)-memory brute force for spot checks at large n,
+  compared against the screen and a saved catalogue.  9.4 h to 100,000 on 8 workers.
 - Dependencies: install freely into the project venv (.venv) with .venv/bin/pip, within reason --
   well-known, actively maintained packages that earn their place (numpy, mpmath, numba, pyarrow,
   matplotlib and the like).  Prefer a package over hand-rolling something it already does well.

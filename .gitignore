@@ -32,3 +32,4 @@ plots/
 # --- run logs (never tracked; regenerate the run instead) ---
 *.log
 simplifying_n*.csv
+simplifying_n*_tier1.csv

@@ -86,9 +86,12 @@ established in that conversation; "verified" means checked numerically with the 
 - Slope jump D at cusps ~1.87 (median), nearly independent of n; one-sided slopes small.
 - Closest cusp to E(1/2) is always in the first band (i+j=n+1, p* ~ 1/2 + 1/(2n)); the gap
   E(p*)-E(1/2) shrinks like ~0.04/n.  The conjecture is delicate only within O(log n / n) of 1/2.
+  [CORRECTED 2026-09-24: the gap scales as n^(-3/2), not 1/n -- see the 2026-09-18 entry and the
+  2026-09-24 entry: (E-E(1/2)) n^(3/2) -> 0.4835 (n even), 0.6830 (n odd).]
 - Tie points cluster in bands: pairs with i+j = n+m sit near p* ~ 1/2 + m/(2n) (m=1 band exactly,
   width ~ ln n/(4n)).
 - No double ties (distinct pairs with identical p*) for n<=40 (exact search); user checked n<=1000.
+  [SUPERSEDED 2026-09-24: none for n<=100,000 -- see the 2026-09-24 entry and FACTS.md.]
 
 ## 4. Proof approaches for  G(p) >= G(1/2)  (equivalently E(n,p) >= E(n,1/2))
 
@@ -255,7 +258,9 @@ E'_+ - E'_- = D to 6e-16.
   every cusp (smallest 5.4e-6 at n=2000; E in double precision).  Since the local minima of E are the
   cusps, this is numerical support for the conjecture on n<=2000.
   The gap scales as n^(-3/2), not ~0.04/n: min(E - E(1/2)) * n^(3/2) = 0.483 (n even), 0.683 (n odd) at
-  n=500..2000 (fit exponent -1.499; odd/even ratio 1.412, close to sqrt 2).  Values of min*n:
+  n=500..2000 (fit exponent -1.499; odd/even ratio 1.412, close to sqrt 2).
+  [CORRECTED 2026-09-24: NOT sqrt 2.  Over n<=5000 the ratio converges to 1.4126 (flat at
+  1.41253-1.41254 from n=2000 on), against sqrt 2 = 1.41421 -- a gap ~100x the residual drift.]  Values of min*n:
   n=100: 0.048, 1000: 0.0153, 2000: 0.0108 (even).
 
 ### 2026-09-20 (Claude Code): shared core, in-place certification, public tables regenerated
@@ -772,6 +777,8 @@ Sizes: cusps/ 672 MB of per-n CSVs + 672 MB merged; cusps_n5000.csv.gz 292 MB.
 
 ANALYSIS (analysis/summary.txt; NOT yet interpreted -- see the flag in section 5):
 - max cusp p* FLAT at 0.6521-0.6523 from n=1250 to 5000, overall max 0.65693.  No drift toward 0.66.
+  [CORRECTED 2026-09-24: that range came from a summary sampling every 250th n.  Over EVERY n > 1250
+  the per-n maximum lies in 0.65170-0.65243; the overall maximum 0.65693 is at n = 15.]
 - F3<0 rate pinned at 1.07% in every n-range, including the 2.83M new cusps.
 - The F3<0 signature is unchanged: median n*gap 0.045 vs 0.499 for F3>0, median intervening ties
   101 vs 1109, median percentile-at-n 27 vs 51.
@@ -840,6 +847,9 @@ WHAT WAS CHECKED.
   below the screen grow as ~n^4 (6 at n=501, 2415 at n=2001, 626,191 at n=7995; ~1e9 in total).
   Zero collisions.  An independent single-threaded run to n<=5000 agreed.
 The screen at 1e-9 is ~250x the worst-case numeric error in p*, so it cannot miss a true collision.
+[WRONG -- corrected 2026-09-24.  The screen compared only NEIGHBOURS in float order, and a near-miss
+can sit between two exactly-colliding points, so it could in principle miss one.  Fixed and rerun;
+see the 2026-09-24 entry.  No collision was in fact missed.]
 
 TOWARD A PROOF.  The valuation identity is probably the right entry point: it turns "two tie points
 coincide" into "two distinct pairs have proportional binomial-coefficient exponent vectors", a
@@ -856,6 +866,15 @@ The exhaustive check (previous entry) settles n<=8000 but costs ~N^3 cumulativel
 there: N=50,000 would be 35 h and N=100,000 about 11 days, and the float pass also hits a memory
 wall near n~25,000 (it builds arrays of n^2/4 entries -- 15 GB at n=50,000).  This entry is about
 searching much further.
+
+[CORRECTED 2026-09-24, read first.  (1) Fact C is now PROVED -- written out and tested
+2026-09-23, independently checked by another model 2026-09-24 -- so "Tier 2" no longer rests on an
+unproved lemma.  (2) The "Tier 1" described below (every pair, exact reducing test, then Facts A and
+B) is NOT what produced the n<=10,000 result of 2026-09-23.  That run was check_collisions.py
+--exhaustive: a float screen plus exact p-adic checks, which uses neither Fact A nor Fact B and
+instead relies on a float error bound -- and it had a neighbours-only bug.  The float-free method
+described here as Tier 1 was first run to n<=10,000 on 2026-09-24 (screen_collisions.py
+--no-fact-c).  See the 2026-09-24 entry.]
 
 WHAT RESTS ON WHAT -- read this before any of the timings below.  There are three tiers, and they
 are NOT three levels of confidence in the same method; two of them share one assumption exactly.
@@ -1087,3 +1106,88 @@ of them and saved none.  --save was added afterwards.  Regenerating costs what t
 cost for that range: n<=20,000 is 4.4 min (27,544 rows, saved to simplifying_n20000.csv), n<=50,000
 ~1.2 h (76,211 rows), the full n<=100,000 ~9.4 h.  Rows grow ~linearly in N while cost grows as
 N^3, so the cheap ranges are cheap per row and the last fifth of the range costs half the time.
+
+### 2026-09-24 (Claude Code): tie-point collisions -- review, two bugs, reruns, final conclusions
+This entry supersedes the collision conclusions of 2026-09-23 wherever they differ.
+
+EXTERNAL REVIEW.  The user had a second model (Fable) check the Fact C proof, which it confirmed,
+and a model review the implementation (screen_collisions.py, check_collisions.py).  It found:
+  1. check_collisions.screen compared only NEIGHBOURS in float-sorted order.  UNSOUND: two tie
+     points that collide exactly still have computed p* differing by rounding, and a near-miss B
+     can land between them, so (A,B) and (B,C) are tested and (A,C) never is.  My claim in the
+     2026-09-23 entry that the screen "cannot miss a true collision" was wrong.  FIXED: every pair
+     within tol is now checked (offsets k=1,2,..., stopping at the first k with no pair, which is
+     safe because p is sorted).  Verified against brute force over all pairs at n=120, 150, 200 --
+     identical pair sets; the old code had skipped 39-78% of them at those loose tolerances.  At
+     the real tol=1e-9 and n=10,000 alone the fix adds 58,986 close pairs never checked before.
+  2. screen_collisions.one_n returned a 3-tuple on a Fact C miss while main() unpacks four, so a
+     miss would have CRASHED the run instead of being reported.  Fail-loud, so it could not have
+     produced a false "no collisions", and the n<=100,000 run did not use --verify.  FIXED, and the
+     path exercised by deliberately breaking the window: it now lists every missed point and exits
+     1.  That test exposed a third defect -- after a miss the verdict still read "NO COLLISIONS";
+     it now says no verdict is possible for those n.
+WHAT THE BUGS COST.  Bug 1 affected only check_collisions.py (the n<=8000 and n<=10,000 runs of
+2026-09-23 and the --parquet/--cusps modes).  screen_collisions.py never uses float proximity, so
+it was untouched, and its n<=100,000 run already covered n<=10,000 with no collisions.  So no
+collision was missed; what was lost was the justification of the n<=10,000 result as stated, which
+the reruns below restore three independent ways.
+
+RERUNS AND NEW RUNS, all 2026-09-24, all exit 0, all ZERO collisions:
+  A. check_collisions.py --exhaustive 10000, with the fix.  83,345,832,499 tie points, every n
+     3..10,000.  1543 s on 8 workers.  Rests on: the exact p-adic criterion (a theorem) and a float
+     error bound (computed p* within ~5e-12 of true, screen at 1e-9, ~170x margin; measured).
+  B. screen_collisions.py --no-fact-c --nmax 10000 (NEW MODE, "Tier 1").  Reducing tie points found
+     by exhaustive brute force with integer arithmetic only (verify_fact_c.brute_force: every width,
+     every i), then Facts A and B.  12,667 reducing points.  2036 s.  Does NOT use Fact C.
+  C. screen_collisions.py --nmax 100000 --save (Fact C screen; the run of 2026-09-24 08:36-15:57,
+     26,456 s).  163,529 reducing points, catalogue saved as simplifying_n100000.csv.  Identical
+     count to the unsaved run of the night before.  Rests on Facts A, B, C, all proved.
+  D. Catalogue B is BYTE-IDENTICAL to the n<=10,000 part of catalogue C.  So the Fact C window
+     provably-and-empirically lost nothing at EVERY n <= 10,000, not just at spot points.
+  E. verify_fact_c.py (NEW, independent, O(n)-memory brute force compared against the screen and
+     the saved catalogue): n = 39,950..40,050 and n = 27719, 45359, 50399, 55439, 65519, 83159,
+     98279 (n+1 highly composite, where reducing points concentrate).  108 values of n, 228
+     reducing points, full agreement, 1231 s.
+  F. Catalogue integrity (simplifying_n100000.csv): width = j-i, band = i+j-n, 1 <= i < j <= n,
+     i+j > n, true root order divides and is less than the width, no duplicates, sorted, no row
+     with j prime, every row within the Fact C bound -- all pass.  Largest min(width, band) in the
+     whole catalogue is 4 (Fact C permits up to 72 below 10^5).  217 rows have true root order 1,
+     i.e. p* exactly rational (beyond the trivial width-1 tie points, p* = (i+1)/(n+1)).
+
+THE FLOAT STEP IN screen_collisions.py, stated precisely, because the user asked whether the result
+is "provably right" or "right with high probability".  It is neither probabilistic nor fully
+library-free.  find_partner locates a candidate by float binary search on ln(rho) at fixed width,
+then checks a +/-4 window EXACTLY.  At fixed width consecutive ln(rho) values are at least 4/(n+1)
+apart (ln h(t) = ln t - ln(n+1-t) has derivative 1/t + 1/(n+1-t) >= 4/(n+1)), about 4e-5 at
+n=100,000, so the window provably contains the partner whenever the float error in ln(rho) is below
+half that -- i.e. whenever lgamma is accurate to ~1e-10 relative, against a real accuracy of ~1e-16.
+IEEE arithmetic is rigorously specified; lgamma's accuracy is a documented library property, not a
+theorem.  The user accepted this assumption explicitly (2026-09-24): library bugs of that size would
+be everyone's problem.  An exact rational binary search was offered and declined.
+
+FINAL STATUS (these are the statements recorded in FACTS.md):
+  - No tie-point collisions for 3 <= n <= 10,000: three independent methods (A, B, C).
+  - No tie-point collisions for 3 <= n <= 100,000: method C, resting on Facts A, B, C (proved),
+    the lgamma accuracy assumption above, and the implementation (reviewed; cross-checked by D, E).
+  - The catalogue of reducing tie points for n <= 100,000 is complete on the same basis, and for
+    n <= 10,000 independently of Fact C (D).
+  Epistemic label: a computer-assisted proof -- no probability involved; correct if the mathematics
+  is correct (checked by two models) and the programs do what they claim (reviewed, cross-checked).
+
+TIMING LESSONS, recorded because I got them wrong twice.  The Fact C screen to 100,000 was
+predicted at 2-4 h and took 9.4 h (true scaling n^3.05 against a fitted n^2.5), and a 1.6x speedup
+measured at n<=20,000 turned out to be 1.27x at large n.  Projections anchored on a measured point
+close to the target were accurate (n=10,000 predicted 17 min, took 17 min); extrapolations were not.
+
+### 2026-09-24 (Claude Code): lowest-cusp facts, recorded (computed 2026-09-23, not logged then)
+Exact scans of cusps/cusps_all.csv, n = 3..5000 (FACTS.md cites these):
+  - The first cusp (smallest p*) is also the lowest cusp (smallest E) at 4993 of 4998 values of n;
+    the exceptions are n = 6, 21, 50, 76, 125.  Both are always in band 1 (i+j = n+1).
+  - Band 1 contains exactly one cusp at 4991 values of n and exactly two at n = 6, 9, 21, 50, 76,
+    125, 321 -- never zero, never three.  The five first-vs-lowest exceptions are among these.
+  - The bands are ordered in p*: (p* - 1/2) * 2(n+1) = b to four digits for band b (checked at
+    n=5000, b = 1..50).  Band 1 is exact by the proved identity C(n,i)/C(n,n+1-i) = (n+1-i)/i,
+    which gives rho^w = j/i for every band-1 tie point.
+  - For the lowest cusp, (E(p*) - E(1/2)) n^(3/2) converges to 0.4835 (n even) and 0.6830 (n odd),
+    Richardson-extrapolated from n = 2000..5000; still rising in the 4th digit at n = 5000.
+    p* - 1/2 -> 1/(2n); width ~ 1.1767 sqrt(n).
