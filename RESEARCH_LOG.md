@@ -128,6 +128,8 @@ PROMISING (the main reduction):
 ## 5. Open questions / next steps
 
 - Prove (★), starting with the first-switch case.
+- (★) now has a switch-point form (D(p_m) <= D(1/2) at explicit balance points) and a four-step
+  plan: see the 2026-09-24 (claude.ai) entry in section 8.
 - **COME BACK TO THIS** (flagged by the user 2026-09-22, deferred until the data-tier housekeeping
   is finished): interpret the n<=5000 analysis.  The run is DONE and the numbers are in the
   2026-09-22 entry -- max cusp p* flat at 0.6521-0.6523 from n=1250 to 5000 with no drift toward
@@ -1228,3 +1230,112 @@ Least-squares fit of cusps per n (above 1/2) over n = 500..5000, public/per_n_su
 Tie points above 1/2 number floor(n^2/4) exactly, so the cusp fraction is ~4 * 0.35371 / n
   = 1.4148 / n; the leading term is the same for all n(n+1)/2 tie points in (0,1) and for the
   floor(n^2/2)+1 distinct p* values.  Empirical, not proved.
+
+### 2026-09-24 (claude.ai): (★) as the working reduction -- certificate view, switch-point form, numbers
+Context: discussion of whether a proof of E(n,p) >= E(n,1/2) should target all p (I), tie points (II)
+or cusps (III).  The three are one theorem (fact 10 + E(0)=E(1)=n > E(1/2) give III => I), so the
+choice is about which hypotheses a proof can USE.  Cusps have no closed-form characterisation, so a
+proof via III collapses to II unless the local cusp inequality does work, and no way to use it was
+found.  The (★) reduction of section 4 is an approach-I proof with a small family of certificate
+rankings; its tight spots are O(n) explicit points sitting exactly where the cusps sit.  Everything
+below is either an elementary argument (marked PROVED/ARGUED) or double-precision numerics (marked
+NUMERICAL).  Nothing here changes any existing table.
+
+1. CERTIFICATE VIEW (PROVED, rearrangement inequality).  E(p) = max over ALL permutations sigma of
+   sum_k sigma(k) f_p(k): pairing the largest masses with the largest ranks maximises the sum.  So
+   every fixed sigma is a polynomial lower bound for E, valid at every p, and E is the upper envelope
+   of them; the touching one is the true ranking, which changes at tie points.  (This is also why
+   every kink of E is convex, fact 11.)  Ranking by distance from a quarter-point centre
+   c in Z/2 + 1/4 (nearest integer gets rank n, then alternating sides; all distances distinct) gives
+        E(p) >= n + 1/2 - 2 E_p|K - c|
+   (boundary terms, where the mirror 2c-k falls outside [0,n], only raise the certificate).  With
+   D(p) = min_c E_p|K-c| as in section 4,
+        L(p) := n + 1/2 - 2 D(p)  <=  E(p)  for all p,   L(1/2) = E(1/2)
+   (the distance ranking from n/2+1/4 IS the true ranking at 1/2).  So L(p) >= L(1/2) for all p
+   implies the conjecture.  This is section 4's (★) written in E units: E - E(1/2) >= 2(D(1/2)-D(p)).
+
+2. LEMMA (ARGUED; full write-up pending).  For fixed c not an integer, phi_c(p) = E_p|K-c| is
+   decreasing-then-increasing in p (quasi-convex).  Argument: d/dp E_p g(K) = n E_p[g(K'+1)-g(K')],
+   K' ~ Bin(n-1,p).  For g = |k-c| the increment Dg(k) = |k+1-c| - |k-c| is nondecreasing in k
+   (-1 below c, 2k+1-2c on the straddling k, +1 above), so it has one sign change, - to +.  The
+   binomial family f_p(k) ~ (p/q)^k q^n is totally positive in (k,p), so by Karlin's
+   variation-diminishing property p -> E_p[Dg(K')] has at most one sign change, in the same order.
+   CONSEQUENCE: D is the lower envelope of the phi_c; on each interval where one c is active, D is
+   quasi-convex; so the maximum of D over [1/2,1] is attained at a SWITCH POINT (or at 1/2).  Hence
+   (★) <=> D(p_m) <= D(1/2) at every switch point p_m.  This closes the "D is not monotone"
+   obstacle noted in section 4.  L is a function with O(n) kinks, ALL of which are local minima --
+   structurally a shadow of E with only its cusps left.
+
+3. SWITCH POINTS ARE EXPLICIT BALANCE CONDITIONS (ARGUED, elementary).  c -> E_p|K-c| is convex
+   piecewise linear with slope P(K<c) - P(K>c), so the minimising c is always med +- 1/4, and the
+   switches alternate between two types as p increases:
+     HALF type (x = n(p-1/2) at a half-integer): active centre a+1/4 -> a+3/4 when P_p(K <= a) = 1/2
+        exactly; there D(p) = E_p|K - a - 1/2|.
+     INT type (x at an integer): a-1/4 -> a+1/4 when P_p(K < a) = P_p(K > a) exactly; there
+        D(p) = E_p|K - a| + (1/4) P_p(K = a).
+   Both balance conditions are monotone in p, so each switch point is unique and they are ordered.
+   The m-th switch point above 1/2 has n p ~ n/2 + m/2, a = floor((n+m)/2), type HALF iff n+m is odd.
+   p = 1/2 is itself of INT type (n even, a = n/2) or HALF type (n odd).  So (★) reads: among all
+   BALANCED (p,a), the balanced mean absolute deviation is largest at p = 1/2.
+   O(1) evaluation: for a = floor(c), K' ~ Bin(n-1,p),
+        E_p|K-c| = np - c + 2[ c P(K <= a) - np P(K' <= a-1) ]
+   (from E|K-c| = E[K-c] + 2E(c-K)^+ and sum_{k<=a} k f(k) = np P(K' <= a-1)).  So a full check of
+   (★) for one n costs O(n) cdf evaluations, against O(n^2) tie points.
+
+4. NUMBERS (NUMERICAL, double precision, scipy; scratch scripts not kept).
+   a. The lowest cusp of each n sits at x = n(p*-1/2) = 0.4999 for n = 200..2000 (from
+      per_n_summary argmin_i/argmin_j), width j-i ~ 1.18 sqrt(n), band 1.  The smooth term
+      2 sqrt(2n/pi) (1/2 - sqrt(p*q*)) explains a CONSTANT 82.5% (n even) / 58.4% (n odd) of the
+      observed margin E(p*) - E(1/2).  Mechanism: E(p) ~ n + 1/2 - 2 E_p|K - np| ~ n + 1/2 -
+      2 sqrt(2npq/pi), and pq = 1/4 - eps^2, so E(p) - E(1/2) ~ 2 sqrt(2n/pi) eps^2 = 1.596 x^2 n^-1.5.
+      That is the origin of the n^-3/2 law (2026-09-18 entry) and of the ~m^2 growth of the band-m
+      cusp constants (2026-09-21 first_cusps entry).  E(1/2) ~ n + 1/2 - 2 sqrt(n/(2 pi)) predicts
+      975.27 at n=1000 against 975.2624.
+   b. (★) margin at EXACT switch points (brentq on the balance condition, D by direct summation),
+      scaled: 2 (D(1/2) - D(p_m)) n^1.5.
+          x     n=1000    n=1001    n=3000    n=3001    2 sqrt(2/pi) x^2
+          1/2   0.2990    0.4983    0.2991    0.4986    0.399
+          1     1.5948    1.5948    1.5954    1.5954    1.596
+          3/2   3.4885    3.6879    3.4900    3.6894    3.590
+          2     6.3790    6.3790    6.3817    6.3817    6.383
+          5/2   9.8676   10.0669    9.8717   10.0712    9.974
+          3    14.3529   14.3529   14.3589   14.3589   14.362
+          4    25.5164   25.5164   25.5269   25.5269   25.532
+      All positive.  Against the true first-cusp constants 0.4832 (even) / 0.6824 (odd) the
+      certificate keeps 62% / 73% at x=1/2 and 81% at x=1 (true 1.963) -- a fixed fraction, NOT
+      eroding in n.  Section 4's "slack O(1/n)" and "~2/3 at n=200" are superseded: the slack is
+      ~0.30 n^-3/2 (even) / ~0.50 n^-3/2 (odd) and stable.
+   c. CONJECTURAL ASYMPTOTIC at fixed x = m/2 as n -> infinity:
+          2 (D(1/2) - D(p_m)) n^1.5  ->  2 sqrt(2/pi) x^2  -+  0.0997 [x half-integer],
+      minus for n even, plus for n odd, no parity term at integer x.  0.0997 = 1/(4 sqrt(2 pi)) to
+      three digits.  The parity term appears exactly when the switch type (HALF/INT) differs from the
+      type at p=1/2.  This also explains the 2026-09-21 first_cusps puzzle: the 2nd cusp (x=1, INT
+      type for both parities) is parity-free; the 1st cusp's even/odd split is this cross-type
+      lattice term (true constants 0.583 -+ 0.0996), not a sqrt 2 ratio.
+   d. CAVEAT on the existing check.  The 1200-point grid of section 4 (n<=200) has spacing ~0.17 in x
+      at n=200 and cannot resolve the switch-point kinks (an 8000-point grid on x in [0,4] returned
+      minima varying 0.15-0.19 at x=1/2 where the exact value is 0.299).  So (★) has never been
+      evaluated where it is tightest; item b is the first such evaluation, and only at four n.
+
+5. PLAN.
+   (i)  Exhaustive switch-point check of (★) for every n <= 5000 (Claude Code, parallel per n),
+        with mpmath spot checks; record the scaled margin per switch point and the minimum per n;
+        compare bands 1-3 against the true cusp margins in cusps_all.csv.
+   (ii) Write up 1-3 properly (the TP lemma in particular).
+   (iii) Derive the asymptotic in 4c with explicit, m-uniform error terms (Edgeworth-type expansion
+        of the balanced MAD at the switch points).  The x^2 term is elementary; the +-0.0997 is the
+        real work.  With (i) as the finite range this would be the proof.
+   (iv) If the expansion is ever too loose near x=1/2, exact band-1 rankings are the fallback
+        certificates there (the only place approach II would earn its keep).
+
+### 2026-09-24 (Claude Code): tie-point counts (FACTS.md P13)
+All pairs 0 <= i < j <= n: C(n+1,2) = n(n+1)/2.  A pair has p* = 1/2 iff C(n,i) = C(n,j), and for
+i < j that is iff i + j = n; there are ceil(n/2) such pairs, (0,n), (1,n-1), ....  The mirror map
+(i,j) -> (n-j, n-i) sends p* to 1-p* and swaps i+j > n with i+j < n, so each side has
+(n(n+1)/2 - ceil(n/2))/2 = floor(n^2/4) pairs.  Checked against binom_core.n_ties for every
+n = 3..3000 and against the stored Parquet dumps (floor(n^2/4) rows plus the p=1/2 axis row).
+Cumulative: sum_{n=1}^N floor(n^2/4) = floor(N(N+2)(2N-1)/24), checked for N = 1..2000; minus 1
+for n = 3..N it reproduces exactly the totals the collision runs reported to 5,000, 8,000 and
+10,000 (10,419,791,249; 42,674,665,999; 83,345,832,499) -- an independent check that those runs
+visited every tie point.  Distinct p* values in (0,1): the ceil(n/2) axis pairs collapse to one
+point, giving floor(n^2/2) + 1, which is exact iff there are no other collisions (n <= 100,000).
