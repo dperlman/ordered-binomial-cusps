@@ -1191,3 +1191,21 @@ Exact scans of cusps/cusps_all.csv, n = 3..5000 (FACTS.md cites these):
   - For the lowest cusp, (E(p*) - E(1/2)) n^(3/2) converges to 0.4835 (n even) and 0.6830 (n odd),
     Richardson-extrapolated from n = 2000..5000; still rising in the 4th digit at n = 5000.
     p* - 1/2 -> 1/(2n); width ~ 1.1767 sqrt(n).
+
+### 2026-09-24 (Claude Code): the largest cusp p* of each n converges to ~0.6522
+plotting/max_pstar.py over the complete table n=3..5000 (plus the n=6000/7000/8000 Parquet cusps).
+- The overall maximum is at SMALL n: 0.656930 at n=15, pair (9,11).  For n>=500 the largest cusp
+  p* never exceeds 0.652591 (n=520).  Consistent with the observed max 0.657 in CLAUDE.md; this is
+  data, not a proof of "no cusps above ~0.66".
+- For n>=500 it sits in a band that closes on a limit from BOTH sides: n=1000..1499 spans
+  0.651575..0.652430 (spread 8.6e-4), n=4501..5000 spans 0.651991..0.652288 (3.0e-4).  Least squares
+  p*_max ~ L - c n^-a over n>=500: L = 0.652195, c = 0.162, a = 0.97 (rms 1.3e-4).  Out of sample:
+  n=6000/7000/8000 give 0.652225 / 0.652121 / 0.652168 against fitted 0.652160 / 0.652165 /
+  0.652169 -- within the scatter.  L is the band's centre, uncertain in the 5th digit; no closed
+  form identified (L/(1-L) = 1.8752).
+- The maximising pair is a narrow tie at 4851 of 4998 n (width 1: 1438, width 2: 2433, width 3-4:
+  980) and a WIDE one (width 57..211) at 147 n, the first at n=366.  No width between 5 and 56 ever
+  gives the maximum.
+- The zoom shows short rising streaks.  They are NOT one pair drifting: only 1-2 consecutive steps
+  are the same pair shifted (i,j) -> (i+1,j+1) (1326 of 4000 steps for n>=1000); the rest of the
+  rises come from a change of pair.  Unexplained.

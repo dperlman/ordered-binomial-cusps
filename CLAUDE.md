@@ -113,6 +113,8 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   100%: a fit-to-window viewer resamples it and brings moire back.  Older scripts are NOT yet
   converted; convert one when the user next asks for that plot.
 - plotting/mass_floor_linear.py: the first NGrid plot -- cusp pair mass vs n, n=3..5000.
+- plotting/max_pstar.py: the largest cusp p* of each n (NGrid, full range + zoom), coloured by
+  the width of the pair that gives it; fits the limit (~0.6522) and checks it on n=6000..8000.
 - plotting/lowest_cusp.py: the minimum-E cusp of each n -- its E-E(1/2), its p*, and its width.
 - Cusp decisions are certified (double-precision screen with margin 1e-6, mpmath interval
   arithmetic for borderline cases).  Descriptive columns (E, F3, slopes) are double precision.
