@@ -66,13 +66,15 @@ tables are not published: they are gigabytes, and the code regenerates them in a
 
 ```bash
 python3 -m venv .venv                       # use a native arm64 Python on Apple Silicon
-.venv/bin/pip install numpy mpmath numba pyarrow matplotlib
+.venv/bin/pip install numpy mpmath numba pyarrow matplotlib scipy
 
 .venv/bin/python cusps_fast.py --nmax 1000 --workers 8 --out cusps/   # certified cusp tables
 .venv/bin/python cusps_fast.py --merge --out cusps/
 
 .venv/bin/python dump_ties.py --n 1000 --data data/ --workers 8       # every tie point, for plots
 .venv/bin/python plotting/cusp_indicator.py --n 1000
+
+.venv/bin/python star_check.py --nmax 5000 --workers 8 --out analysis/  # (★) at every switch point
 ```
 
 `n = 1000` takes under two minutes on eight cores; `n <= 3000` takes about 2.5 hours.

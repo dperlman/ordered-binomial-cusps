@@ -167,6 +167,8 @@ PROMISING (the main reduction):
 - analyze_cusps.py (numpy only): analyses over cusps_all.csv; writes analysis/ (per_n_summary.csv,
   negF3_neighbors.csv, all_neighbors.csv, summary.txt).  Copies of per_n_summary.csv and
   negF3_neighbors.csv are at the top level.
+- star_check.py (numpy + scipy + mpmath): exhaustive switch-point check of (★), parallel per n;
+  --validate, --mp-check, --lemma-check.  star_analyze.py: its analyses.  See the 2026-09-24 entries.
 - Original question sheet: 3QuestsClaude.pdf (page 21 of a larger note).
 
 ## 7. Data architecture (plotting datasets)
@@ -1339,3 +1341,101 @@ for n = 3..N it reproduces exactly the totals the collision runs reported to 5,0
 10,000 (10,419,791,249; 42,674,665,999; 83,345,832,499) -- an independent check that those runs
 visited every tie point.  Distinct p* values in (0,1): the ceil(n/2) axis pairs collapse to one
 point, giving floor(n^2/2) + 1, which is exact iff there are no other collisions (n <= 100,000).
+
+### 2026-09-24 (Claude Code): (★) at EVERY switch point, n = 3..5000 -- plan item (i) done
+Program: star_check.py (new; scipy's bdtr/bdtrc for the cdfs -- scipy installed into .venv today),
+analyses by star_analyze.py.  Run: star_check.py --nmax 5000 --workers 8 --out analysis/.
+Double precision throughout, NOT interval-certified; the error is measured against mpmath below.
+Nothing here touches the cusp tables or any code that produces them.
+
+Method (all as in the claude.ai entry above, items 2-3; no p-grid anywhere).
+  - Switch points: for m = 1..n-1, a = floor((n+m)/2), HALF (n+m odd) P(K<=a) = 1/2, INT (n+m even)
+    P(K<a) = P(K>a).  Each root bracketed near 1/2 + m/(2n) (fallback [1/2,1]) and bisected, vectorised
+    over m, until the bracket is two ADJACENT doubles.  brentq agrees to <= 2.7e-15 in p.
+    There are exactly n-1 switch points in (1/2,1): m = n would be INT with a = n, which has no root
+    below 1.  They are strictly increasing in m for every n <= 5000; the last is 2^(-1/n).
+  - D(p_m) from a cancellation-free form of item 3's identity, K' ~ Bin(n-1,p):
+        E_p|K-a| = (a - np)(2 P(K'<=a) - 1) + 2 p (n-a) P(K'=a)
+    (nothing of size n is subtracted: a - np = O(1) at the switch points), then the envelope of the
+    two centres that meet there, evaluated at the computed p.
+  - D(1/2) EXACT: (n/2) C(n-1, floor(n/2)) 2^(1-n) (+ P(K=n/2)/4 for n even) as a Fraction, rounded
+    once.  Equal bit for bit to the definitional sum E_{1/2}|K - n/2 - 1/4| for n = 3..300 and 6
+    larger n.  L(1/2) = n + 1/2 - 2 D(1/2) matches binom_core.E_half(n) to 1.8e-15 n (item 1 checks).
+Validation.  The item 4b table reproduces to 4 decimals at all 28 entries (n = 1000, 1001, 3000, 3001;
+  m = 1..6, 8).  202 seeded random (n,m) re-evaluated by DIRECT summation over k, minimised over
+  EVERY centre c in Z/2 + 1/4: max relative difference 1.7e-12 (limited by the lgamma masses).
+mpmath, 50 digits, 25 (n,m) pairs spread over n = 3..5000 including m = 1, 2, 3, n/2 and n-1 at
+  n = 5000 (findroot on the exact balance sum, D by direct summation, D(1/2) exact); the table is
+  written to analysis/star_mp_check.csv.
+      p_m error                 <= 559 ulp (n=5000, m=3); grows with n, it is bdtr's ~1e-13 noise
+      D(p_m) error              <= 9.2e-12 absolute (n=5000, m=1), relative 3e-13
+      D(1/2) error              <= 1.8e-15 (one rounding)
+      M error                   <= 6.5e-6 absolute, 2.2e-5 relative (n=5000, m=1, M = 0.29917)
+  The smallest absolute margin anywhere at large n is n=5000, m=1: D(1/2) - D(p_1) = 4.2e-7 against
+  an error of 9.2e-12 -- a factor 4.6e4.  (The overall smallest SCALED margin is at n=4, where the
+  error is ~1e-15.)
+
+RESULTS
+  1. (★) HOLDS AT EVERY SWITCH POINT for n = 3..5000 (12,497,499 switch points): min_M > 0 at all
+     4998 n.  Smallest min_M = 0.257327 at n = 4; for n >= 100, even n: 0.297411..0.299174, odd n:
+     0.495456..0.498616.  With the lemma (item 2, still only ARGUED) this is (★), hence
+     E(n,p) >= E(n,1/2), for every p and every n <= 5000.
+  2. The minimum over m is at m = 1 for EVERY n, and more: M(n,m) is strictly increasing in m at every
+     n (all 12.5M rows checked).  M / (2 sqrt(2/pi) x_m^2) >= 0.7500 everywhere (attained at m=1, n
+     even, large n; see 4).  x_1 = 0.49833 (n=100), 0.49983 (1000), 0.49997 (5000);
+     max |x_m - m/2| over all switch points 0.193 (at m near n, where p_m -> 2^(-1/n), not 1 - 1/(2n)).
+  3. Retained fraction M(n,b) / [(E(cusp) - E(1/2)) n^1.5], lowest cusp of band b = i+j-n (E from
+     cusps_all.csv in double, E(1/2) from binom_core.E_half), median per n-range [min, max]:
+          band  parity   100-499   500-999   1000-1999  2000-2999  3000-3999  4000-5000
+           1    even     0.6194    0.6190    0.6189     0.6188     0.6188     0.6188 [0.6188,0.6188]
+           1    odd      0.7309    0.7304    0.7303     0.7302     0.7302     0.7302 [0.7301,0.7302]
+           2    even     0.8135    0.8128    0.8125     0.8125     0.8124     0.8124
+           2    odd      0.8132    0.8127    0.8125     0.8124     0.8124     0.8124
+           3    even     0.8644    0.8637    0.8635     0.8634     0.8633     0.8633
+           3    odd      0.8709    0.8701    0.8699     0.8698     0.8698     0.8697
+     Stable: the drift is in the 4th decimal and settles, i.e. the certificate keeps a FIXED fraction
+     of the true margin, as item 4b said (62% / 73% / 81%).  At small n it is higher (band 1: 0.927 at
+     n=3, 0.739 at n=4, 0.63-0.79 for n <= 30).  Band 2 exists from n = 6, band 3 from n = 9.  Per band
+     the comparison uses the LOWEST cusp; 48 (n, band) cells have two cusps, the largest n being
+     (4064, band 2).  Output: analysis/star_bands.csv.
+  4. Item 4c CONFIRMED to 6 digits.  Fit R(n,m) = M(n,m) - 2 sqrt(2/pi)(m/2)^2 = L + b/n + c/n^2 over
+     n in [500,5000], separately by parity, m = 1..20 (rms 7e-7..1.7e-6, i.e. at the noise):
+        odd m:   L = -0.099736 (n even), +0.099735 (n odd), every m = 1..19 (-0.09974 at m >= 17)
+        even m:  |L| <= 6e-6
+     1/(4 sqrt(2 pi)) = 0.0997356.  Since 2 sqrt(2/pi)(m/2)^2 = m^2/sqrt(2 pi), the conjecture reads
+     more simply
+        M(n,m) -> (m^2 - 1/4)/sqrt(2 pi)  [m odd, n even],   (m^2 + 1/4)/sqrt(2 pi)  [m odd, n odd],
+                  m^2/sqrt(2 pi)          [m even],
+     so the tightest point tends to (3/4)/sqrt(2 pi) = 0.299207 (n even) and (5/4)/sqrt(2 pi) =
+     0.498678 (n odd); measured at n=5000/4999: 0.299164, 0.498612, approaching from below.
+     RATE: 1/n.  Free-exponent fits of |R - L| give n^-0.995..-0.999 for m <= 4 (n^-0.89 at m=20,
+     where the n^-2 term is still large).  The 1/n coefficient is b = -0.2548 m^2 for even m, and
+     -0.2548 m^2 +0.075 (n even) / -0.075 (n odd) for odd m; c grows like ~0.1 m^4.  So the
+     expansion is in powers of m^2/n = 4x^2/n: an m-uniform version (plan (iii)) needs a separate
+     regime once x ~ sqrt(n), i.e. p - 1/2 ~ n^-1/2.  The margins there are enormous (M ~ x^2), so
+     that regime should be easy, but it has to be stated.
+  5. LEMMA, sampled (not a proof): for n = 3..300, D evaluated by direct summation (min over every
+     centre) at 64 interior points of EVERY switch interval [p_{m-1}, p_m] (p_0 = 1/2, last interval
+     up to p = 1 where D = 1/4) never exceeds the larger endpoint value; the worst case is 1.7e-4
+     BELOW it.  So nothing between switch points is higher than the switch points, as item 2 claims.
+     (Samples inside an interval are fine here: the kinks are the endpoints, which are exact.)
+
+Checked against the claude.ai entry above: NOTHING contradicted.  Items 3 and 4b-c are confirmed as
+stated.  Section 4's "(★) keeps 100% of the true margin for n<=20" does NOT hold at the exact switch
+points (band 1: 0.63-0.93 for n <= 20); that grid figure is superseded, as the entry already said of
+section 4's other numbers.
+
+RUNTIME, measured on 8 performance cores (in-worker times match a serial run of the same n):
+  n=3..5000 in 78 s wall, 599 CPU-s, 773% CPU; 0.037 s at n=1000, 0.263 s at n=5000, ~n^1.22 per n
+  (bisection: ~50 bdtr passes over n values of m; bdtr itself grows mildly with n).  The FIRST run
+  took 331 s at 519% CPU with 2.25 s per n at n=5000: the machine was at load average ~60 (Spotlight
+  indexing the new files among other things) and the pool was not getting the performance cores.
+  The rerun was byte-identical in all outputs.
+  Extrapolated from the measured t(5000) = 0.263 s with the n^1.22 law: n <= 10,000 would add ~2,200
+  CPU-s (~4.5 min on 8 workers), n <= 20,000 ~12,000 CPU-s (~25 min), n <= 50,000 ~97,000 CPU-s
+  (~3.4 h).  CPU is not the limit; DISK is: the per-switch-point files are 1.1 GB for n <= 5000 and
+  grow as n^2 (~4.4 GB at 10,000, ~18 GB at 20,000).  An extension should keep only the first few m
+  per n (M is increasing in m, and the per-n row records min_M), or compress.
+Outputs (all local, analysis/ is ignored): star_per_n.csv (RESULT shape, one row per n), 
+  star_switch_points/nNNNNN.csv (4998 files, 1.1 GB), star_bands.csv, star_crosscheck.csv,
+  star_mp_check.csv, star_timings.csv, star_analysis.txt.  All LF, csv module with lineterminator="\n".

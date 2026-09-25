@@ -45,6 +45,7 @@ computation over the stated range, by the named program.  Dates are when the res
 | S13 | The first tie point above ½ is the innermost pair. | n ≤ 200 | pre-repository work | ≤ 2026-09-20 |
 | S14 | Number of cusps above ½ ≈ 0.3537 n (within about ±5 of the fit at any n, worst ±20); over all of (0,1), ≈ 0.7074 n + 1 (mirror images plus the cusp at p = ½).  Empirical fit, not a formula. | 500 ≤ n ≤ 5000 | fit to `public/per_n_summary.csv` | 2026-09-24 |
 | S15 | Fraction of tie points that are cusps ≈ 1.415 / n (same leading term for the ⌊n²/4⌋ tie points above ½, all tie points in (0,1), or distinct p\* values).  Follows from S14. | 500 ≤ n ≤ 5000 | as S14 | 2026-09-24 |
+| S16 | **(★) at every switch point**: D(p<sub>m</sub>) < D(½) for all n−1 switch points p<sub>m</sub> in (½,1).  Scaled margin 2(D(½)−D(p<sub>m</sub>))n<sup>1.5</sup> is smallest at m = 1 for every n and strictly increasing in m; minimum 0.2573 (n = 4), ≥ 0.2974 for n ≥ 100.  Double precision; worst measured error (mpmath, 50 digits) 4.6×10⁴ below the smallest margin.  Implies the main conjecture for these n **only together with the switch-point lemma**, which is argued, not proved. | 3 ≤ n ≤ 5000 | `star_check.py` | 2026-09-24 |
 
 Screened results rest on the code being correct (S1–S3: externally reviewed and cross-checked
 against independent brute force) and on standard library functions (`lgamma`) behaving as documented.
@@ -52,6 +53,7 @@ against independent brute force) and on standard library functions (`lgamma`) be
 ## Not established — open
 
 - The main conjecture: E(n,p) ≥ E(n,½) for all p, all n.  (S6 is numerical support only.)
+- The switch-point lemma (D quasi-convex between switch points; Log 2026-09-24, claude.ai entry, item 2): argued, not written up.  S16 needs it.
 - That no cusp lies above p ≈ 0.66 for all n.  (S5 is numerical.)
 - The sign of F3 at cusps; whether F3 < 0 cusps have a structural characterisation.
 - A lower bound on the pair mass f(i) at a cusp.

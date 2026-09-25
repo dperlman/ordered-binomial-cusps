@@ -88,6 +88,10 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   D and the gap columns.  Use it rather than recomputing -- it encodes two numerical rules
   (normalised masses, and never subtracting S_plus-S_minus).  See RESEARCH_LOG.md section 7 (data architecture).
 - analyze_cusps.py (numpy only): analyses straight off cusps_all.csv; writes analysis/.
+- star_check.py: exhaustive switch-point check of the (★) reduction (RESEARCH_LOG 2026-09-24).  Uses
+  scipy (bdtr) -- it is NOT part of the certified generator.  --validate / --mp-check / --lemma-check;
+  run: --nmax 5000 --workers 8 --out analysis/.  Writes one file per n of ~n rows (1.1 GB at n<=5000,
+  grows as n^2).  star_analyze.py: its analyses (sign, argmin, band fractions, asymptotic fits).
 - check_collisions.py / screen_collisions.py / verify_fact_c.py: the tie-point collision tools; see
   Conventions below.
 - ALWAYS pass --workers to long compute.  Jobs the agent launches inherit a reduced QoS and a
