@@ -1209,3 +1209,14 @@ plotting/max_pstar.py over the complete table n=3..5000 (plus the n=6000/7000/80
 - The zoom shows short rising streaks.  They are NOT one pair drifting: only 1-2 consecutive steps
   are the same pair shifted (i,j) -> (i+1,j+1) (1326 of 4000 steps for n>=1000); the rest of the
   rises come from a change of pair.  Unexplained.
+  UPDATE, same day: explained, and the period is 3.  The window plot (max_pstar.py --nmin 4900
+  --nmax 5000 --lines --no-fit) shows three interleaved rising sequences.  Stepping n -> n+3 maps
+  the maximising pair (i,j) -> (i+2,j+2) at 872 of 1000 n in 1000..1999 and 85 of 98 in 4900..5000,
+  and every such step RAISES p*.  Heuristically, for a narrow tie p* ~ i/n ~ 0.652 < 2/3, and (i+2)/(n+3) >
+  i/n exactly when i/n < 2/3.  Each streak in the full plot is one of these three sequences
+  climbing until the pair stops being the maximising cusp, at which point it drops back.  The
+  run lengths are 35-45 n in 4900..5000; I have no formula for them yet.
+  The 4500..5000 window shows the resets are near-periodic, ~46 n apart by eye.  A CANDIDATE, not a
+  result: 2/(2-3L) = 46.07 for L = 0.652195 (the drift per 3 steps is (i+2)/(n+3) - i/n ~
+  (2-3L)/n).  A crude automatic reset detector gives mean spacing 47.3 over n=3000..4000 and 47.1
+  over 4000..5000, but it misses resets at lower n (58 and 94 there), so it is not a test.

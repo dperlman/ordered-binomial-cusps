@@ -94,27 +94,20 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   single-threaded one lands on the efficiency cores while the performance cores idle; the same
   n<=1500 scan is 15.7 s serial and 3.0 s on 8 workers (711% CPU), because the pool spills onto the
   performance cores.
-- plotting/: plots to plots/.  plotting/_style.py holds the shared defaults -- DEFAULT RESOLUTION IS
-  6000x3000 (changed 2026-09-22 from 10000x6000, which was larger than anything needed).  It also
-  holds marker_size(), which sizes markers to ~3x the point spacing: these plots routinely put ~5000
-  points on the x axis, where a 1 px marker at 1.1 px spacing produces moire.  Markers slightly WIDER
-  than the spacing, alpha < 1, antialiasing on, and NEVER a connecting line through dense points.
-  Default x axis is LINEAR so all ~5000 values of n get their own column of pixels; --logx for the
-  power laws.
-- ONE PIXEL COLUMN PER n (2026-09-23) -- the default for EVERY plot with n on a linear x axis.  Use
-  plotting/_style.py NGrid: every n gets exactly k whole pixel columns (k = largest integer with
-  N*k <= 6000, so 1 px per n once N > 3000), so every per-n mark is exactly k px wide.  The FIGURE
-  WIDTH FOLLOWS THE n-RANGE (margins + N*k); height stays at the default.  The data are painted
-  into an RGBA array and placed with figimage -- no matplotlib resampling -- via g.points() (per-n
-  marks, k px wide by h px tall) and g.density() (clouds of many points per n, shaded by count per
-  pixel); curves, annotations and the legend go on g.ax.  Never bbox_inches="tight"; never change
-  xlim.  marker_size() is for --logx only, where uniform columns are impossible.  n ranges start at
-  the first n with data -- n=3 for cusps (n=2 has a tie point but no cusp).  Look at the PNG at
-  100%: a fit-to-window viewer resamples it and brings moire back.  Older scripts are NOT yet
-  converted; convert one when the user next asks for that plot.
-- plotting/mass_floor_linear.py: the first NGrid plot -- cusp pair mass vs n, n=3..5000.
-- plotting/max_pstar.py: the largest cusp p* of each n (NGrid, full range + zoom), coloured by
-  the width of the pair that gives it; fits the limit (~0.6522) and checks it on n=6000..8000.
+- plotting/: plots to plots/; plotting/_style.py holds shared helpers (default size 6000x3000).
+  THE ONE PLOTTING CONCERN (user, 2026-09-24): avoid ALIASING IN POINT WIDTHS when the number of
+  x values is comparable to the pixel width (e.g. ~5000 values of n across ~5000 px).  A marker
+  whose width varies by a pixel from column to column reads as moire.  Everything else -- colours,
+  sizes, lines, panels, ranges -- is ad hoc per plot; do not turn choices into rules.
+  Tools for it: NGrid in _style.py gives every n exactly k whole pixel columns and paints the
+  marks itself (points(), discs(), density()), so widths are identical; figure width then follows
+  the n-range.  marker_size() is the older alternative (markers ~3x the spacing, overlapping).
+  NGrid needs its xlim left alone and no bbox_inches="tight" (both would shift the painted image).
+  View PNGs at 100%: a fit-to-window viewer resamples and brings moire back.
+- plotting/mass_floor_linear.py: cusp pair mass vs n, n=3..5000 (NGrid).
+- plotting/max_pstar.py: the largest cusp p* of each n (NGrid), coloured by the width of the pair
+  that gives it; fits the limit (~0.6522).  --nmin/--nmax/--lines/--no-fit for a close-up window,
+  where markers are circles with area proportional to the pair width.
 - plotting/lowest_cusp.py: the minimum-E cusp of each n -- its E-E(1/2), its p*, and its width.
 - Cusp decisions are certified (double-precision screen with margin 1e-6, mpmath interval
   arithmetic for borderline cases).  Descriptive columns (E, F3, slopes) are double precision.

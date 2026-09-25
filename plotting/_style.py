@@ -40,7 +40,8 @@ def save(fig, path, dpi=DPI):
 
 
 # ---------------------------------------------------------------------------------------------
-# ONE PIXEL COLUMN PER n  (the default for every plot with n on a LINEAR x axis, from 2026-09-23)
+# ONE PIXEL COLUMN PER n  -- a tool against point-width aliasing when there are about as many
+# values of n as pixels.  Use it when that is the problem; everything else about a plot is ad hoc.
 #
 # Every n gets exactly k whole pixel columns, so every per-n mark is exactly k px wide and none is
 # split across two columns.  With an integer spacing there is nothing for moire to beat against,
@@ -53,8 +54,10 @@ def save(fig, path, dpi=DPI):
 #     resampling anywhere.  Rows come from the axes' own transData, so a log y axis just works.
 #   * layering: a BACK axes (grid, ticks, labels; spines pushed 1 px outside the data area),
 #     then the painted data, then a transparent FRONT axes for fitted curves, annotations and the
-#     legend.  Draw overlays on g.ax / g.axes[i]; paint the data with g.points / g.density.
+#     legend.  Draw overlays on g.ax / g.axes[i]; paint with g.points / g.discs / g.density.
 #   * k defaults to the largest integer with N*k <= DEFAULT_W, i.e. 1 px per n once N > 3000.
+#     For a short range k is large; pass points(w=...) for marks narrower than the column, and
+#     draw connecting lines on g.back[i] so they sit UNDER the painted marks.
 # Only for a linear n axis: --logx cannot have uniform columns, and uses marker_size() instead.
 # View at 100%: any viewer that fits the image to the window resamples it and brings moire back.
 # ---------------------------------------------------------------------------------------------
@@ -113,15 +116,40 @@ class NGrid:
         cv = self.canvas[panel]; a = np.broadcast_to(np.asarray(a, np.float32), rr.shape)[:, None]
         cv[rr, cc] = np.concatenate([rgb*a, a], axis=1) + cv[rr, cc]*(1 - a)
 
-    def points(self, n, y, color, panel=0, h=3, alpha=1.0):
-        """One mark per (n, y): exactly k px wide (n's own columns) and h px tall."""
+    def points(self, n, y, color, panel=0, h=3, alpha=1.0, w=None, overflow=False):
+        """One mark per (n, y), h px tall.  w px wide (default k, i.e. all of n's columns),
+        centred in n's column block; for sparse ranges, where k is large, pass w < k.
+        overflow=True lets w exceed k, spilling into the neighbours' columns -- only for marks
+        whose SIZE encodes a quantity, where the user has asked for that."""
+        w = self.k if w is None else int(w)
+        if w < 1 or (w > self.k and not overflow):
+            raise ValueError(f"w must be 1..k={self.k} (or pass overflow=True)")
         c, r = self._cols_rows(n, y, panel)
+        c = c + (self.k - w)//2
         dr = np.arange(h) - h//2
-        rr = (r[:, None, None] + dr[None, :, None]).ravel()
-        cc = np.broadcast_to(c[:, None, None] + np.arange(self.k)[None, None, :],
-                             (len(c), h, self.k)).ravel()
-        ok = (rr >= 0) & (rr < self.ph)
+        shape = (len(c), h, w)
+        rr = np.broadcast_to(r[:, None, None] + dr[None, :, None], shape).ravel()
+        cc = np.broadcast_to(c[:, None, None] + np.arange(w)[None, None, :], shape).ravel()
+        ok = (rr >= 0) & (rr < self.ph) & (cc >= 0) & (cc < self.pw)
         self._over(panel, rr[ok], cc[ok], _hex_rgb(color), alpha)
+
+    def discs(self, n, y, color, d, panel=0, alpha=1.0, ss=4):
+        """Antialiased circles of diameter d px, centred on n's column block and y's pixel row.
+        d may exceed k: they spill into neighbouring columns.  Coverage by ss x ss supersampling."""
+        c, r = self._cols_rows(n, y, panel)
+        cx, R = self.k/2, d/2                          # centre offset from the block's first column
+        ox = np.arange(int(np.floor(cx - R)) - 1, int(np.ceil(cx + R)) + 1)
+        oy = np.arange(int(np.floor(0.5 - R)) - 1, int(np.ceil(0.5 + R)) + 1)
+        sub = (np.arange(ss) + 0.5)/ss
+        X = (ox[:, None] + sub[None, :]).ravel() - cx
+        Y = (oy[:, None] + sub[None, :]).ravel() - 0.5
+        inside = (Y[:, None]**2 + X[None, :]**2) <= R*R
+        cov = inside.reshape(len(oy), ss, len(ox), ss).mean(axis=(1, 3))
+        ky, kx = np.nonzero(cov); a = (cov[ky, kx]*alpha).astype(np.float32)
+        rr = (r[:, None] + oy[ky][None, :]).ravel(); cc = (c[:, None] + ox[kx][None, :]).ravel()
+        aa = np.broadcast_to(a, (len(r), len(a))).ravel()
+        ok = (rr >= 0) & (rr < self.ph) & (cc >= 0) & (cc < self.pw)
+        self._over(panel, rr[ok], cc[ok], _hex_rgb(color), aa[ok])
 
     def density(self, n, y, lo="#dde1e6", hi="#3d434b", panel=0):
         """Every (n, y) sample binned into its pixel; colour runs lo -> hi with log(count).
