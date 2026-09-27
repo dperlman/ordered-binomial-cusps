@@ -62,8 +62,10 @@ def main():
     rows = {k: ([], []) for k in keys + [f"p{v}" for v in fixed]}
     for n in ns:
         n = int(n); base = 0.0 if a.absolute else core.E_half(n)
-        i1, j1, _, i2, j2, _ = _two_lowest(n, core.lnC_arr(n))
-        Et = [core.evaluate(n, i1, j1)[1]] + ([core.evaluate(n, i2, j2)[1]] if i2 >= 0 else [])
+        Et = []
+        if "t1" in keys or "t2" in keys:               # O(n^2) scan: only when asked for
+            i1, j1, _, i2, j2, _ = _two_lowest(n, core.lnC_arr(n))
+            Et = [core.evaluate(n, i1, j1)[1]] + ([core.evaluate(n, i2, j2)[1]] if i2 >= 0 else [])
         Ec = cz.get(n, [])
         have = {"t1": Et[:1], "t2": Et[1:2], "c1": Ec[:1], "c2": Ec[1:2]}
         have.update({f"p{v}": [core.E_at(n, v)] for v in fixed})
@@ -113,7 +115,8 @@ def main():
     b.tick_params(which="minor", length=6, width=1.2)
     from matplotlib.ticker import MultipleLocator
     span = ns[-1] - ns[0]
-    major, minor = (10, 1) if span <= 150 else (50, 10) if span <= 600 else (100, 20)
+    major, minor = ((10, 1) if span <= 150 else (50, 10) if span <= 600 else
+                    (100, 20) if span <= 1500 else (500, 100))
     b.xaxis.set_major_locator(MultipleLocator(major)); b.xaxis.set_minor_locator(MultipleLocator(minor))
     b.grid(True, which="major", alpha=0.35, lw=1.2)
     if not a.absolute: b.grid(True, which="minor", axis="y", alpha=0.15, lw=0.8)
