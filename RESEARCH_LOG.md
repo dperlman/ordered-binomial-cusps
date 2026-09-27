@@ -1439,3 +1439,19 @@ RUNTIME, measured on 8 performance cores (in-worker times match a serial run of 
 Outputs (all local, analysis/ is ignored): star_per_n.csv (RESULT shape, one row per n), 
   star_switch_points/nNNNNN.csv (4998 files, 1.1 GB), star_bands.csv, star_crosscheck.csv,
   star_mp_check.csv, star_timings.csv, star_analysis.txt.  All LF, csv module with lineterminator="\n".
+
+### 2026-09-27 (Claude Code): the first tie point above 1/2 is almost never the first cusp
+Asked by the user, who had assumed they coincide.  first_tie_vs_cusp.py, n = 3..5000, exhaustive:
+for every n, every pair 0<=i<j<=n with i+j>n is scanned for the smallest ln rho (p* is increasing in
+it), keeping the runner-up; the first cusp is the smallest-p* row of cusps_all.csv.  4 s on 8 workers.
+- The first tie point (smallest p* > 1/2) is the innermost pair, always in band 1: (n/2, n/2+1) for
+  even n (width 1, p* = (n+2)/(2n+2)), ((n-1)/2, (n+3)/2) for odd n (width 2).  All 4998 n.
+  Extends FACTS S13 from n<=200.  The smallest gap to the runner-up is 3.6e-11 in ln rho (n=4968),
+  far above the ~1e-12 error in ln rho, so no pair was misidentified.
+- It is the first cusp ONLY at n = 3, 4, 5, 6, 7, 9.  Everywhere else the first cusp is a wider
+  band-1 pair just above it: n=100 (45,56) vs (50,51); n=1000 (482,519) vs (500,501); n=5000
+  (2459,2542) vs (2500,2501).  Its width grows like ~1.17 sqrt(n) (11 at n=100, 37 at 1000, 83 at
+  5000); p* differs from the first tie point's by only ~2e-3/n at n=100, shrinking faster.
+- Heuristic, not proved: p = 1/2 is itself a cusp, so E is increasing just to its right.  The first tie
+  point above 1/2 can only be a local minimum if E has already turned down in between, which the
+  concave piece between 1/2 and the innermost pair does only for small n.

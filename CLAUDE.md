@@ -39,7 +39,7 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   Cost went from ~n^1.53 to ~n^1.05; verified identical verdict AND identical precision route on all
   34,789 logged checks.  S_+ = S_- + (j-i) exactly in these units.
 - binom_core.py is the ONLY implementation of the mathematics: constants (MARGIN/GAP/TINY), lnC,
-  E_half, the numba screening kernel (tie_kernel/screen), certify()/certify_escalating(),
+  E_half, E_at (E at any p), the numba screening kernel (tie_kernel/screen), certify()/certify_escalating(),
   evaluate(), recheck().  Every other script imports it.  Do not re-derive any of this elsewhere --
   before this existed the mass recurrence, the rank merge, the F3 formula and E_half were each
   written twice, and the two E_half versions had already drifted apart (500x different error at
@@ -112,6 +112,8 @@ in step with the log: when a result is locked in or corrected, update both.  No 
 - plotting/max_pstar.py: the largest cusp p* of each n (NGrid), coloured by the width of the pair
   that gives it; fits the limit (~0.6522).  --nmin/--nmax/--lines/--no-fit for a close-up window,
   where markers are circles with area proportional to the pair width.
+- plotting/E_over_n.py: E/n vs n (default n<=100) at p=1/2 (the first tie point AND first cusp:
+  every mirror pair ties there), the second tie point, the second cusp, p=0.51 and p=0.61.
 - plotting/lowest_cusp.py: the minimum-E cusp of each n -- its E-E(1/2), its p*, and its width.
 - Cusp decisions are certified (double-precision screen with margin 1e-6, mpmath interval
   arithmetic for borderline cases).  Descriptive columns (E, F3, slopes) are double precision.
