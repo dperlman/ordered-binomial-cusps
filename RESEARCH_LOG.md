@@ -1455,3 +1455,15 @@ it), keeping the runner-up; the first cusp is the smallest-p* row of cusps_all.c
 - Heuristic, not proved: p = 1/2 is itself a cusp, so E is increasing just to its right.  The first tie
   point above 1/2 can only be a local minimum if E has already turned down in between, which the
   concave piece between 1/2 and the innermost pair does only for small n.
+
+### 2026-09-27 (Claude Code): E at a fixed p dips at n = m/(2p-1)
+Seen in plotting/E_over_n.py ((E - E(1/2))/n vs n, log y, n<=1000).  At fixed p the curve is a row
+of scallops whose sharp minima sit at exactly n = m/(2p-1), m = 1, 2, 3, ...: detected minima at
+n = 50, 100, ..., 400 for p=0.51 (every 50), n = 100, 200, ..., 900 for p=0.505 (every 100), and
+n = 500 for p=0.501 (the next, 1000, is at the edge of the range).  Detector: local minimum of log y
+more than 0.5 below its +-15 median; it misses the shallower late dips, it found none off-lattice.
+Heuristic, not proved: a narrow near-mode tie (i,j) has p* ~ 1/2 + (i+j-n)/(2n), so p lands on the
+band-m tie points -- where the cusps are -- exactly when n(2p-1) = m.  Also visible: the second cusp
+falls onto the first-cusp curve at exactly the n where band 1 holds two cusps (FACTS S8: 21, 50,
+76, 125, 321 in this range), and the first tie point stays 12-17% above the first cusp in
+(E-E(1/2))/n at every n<=1000 (even n 1.07-1.17, odd n 1.03-1.12, settling at 1.167 / 1.117).

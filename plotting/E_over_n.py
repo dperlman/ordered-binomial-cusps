@@ -10,6 +10,8 @@ Plotted: (E(n,p) - E(n,1/2))/n, log y, for n = 2..nmax, at
   second tie point   second-smallest p* (from n=3)
   second cusp        second-smallest-p* cusp (from n=6: n=3..5 have one cusp above 1/2)
   p = 0.51, 0.61     binom_core.E_at
+--series picks which tie/cusp series appear and --p the fixed p values, e.g.
+  --series c1,c2 --p 0.6,0.51,0.501 --tag _cusps
 --absolute plots E/n itself instead (linear y) -- there the curves overlap almost completely.
 "First" excludes p=1/2 itself, where every mirror pair ties at once.  The first tie point is the
 first cusp only at n = 3, 4, 5, 6, 7, 9 (first_tie_vs_cusp.py, n<=5000), so those points coincide;
@@ -47,30 +49,39 @@ def main():
     ap.add_argument("--absolute", action="store_true", help="plot E/n, not (E - E(1/2))/n")
     ap.add_argument("--out", default="plots")
     ap.add_argument("--height", type=int, default=st.DEFAULT_H)
+    ap.add_argument("--series", default="t1,c1,t2,c2",
+                    help="tie/cusp series: t1,t2 (first/second tie point), c1,c2 (cusps)")
+    ap.add_argument("--p", default="0.51,0.61", help="fixed p values, drawn as dots")
+    ap.add_argument("--tag", default="", help="suffix for the output file name")
     a = ap.parse_args()
+    keys = [k for k in a.series.split(",") if k]
+    fixed = [float(v) for v in a.p.split(",") if v]
 
     ns = np.arange(a.nmin, a.nmax + 1)
     cz = cusps_by_n(a.csv, a.nmax)
-    rows = {k: ([], []) for k in ("t1", "c1", "t2", "c2", "p51", "p61")}
+    rows = {k: ([], []) for k in keys + [f"p{v}" for v in fixed]}
     for n in ns:
         n = int(n); base = 0.0 if a.absolute else core.E_half(n)
         i1, j1, _, i2, j2, _ = _two_lowest(n, core.lnC_arr(n))
         Et = [core.evaluate(n, i1, j1)[1]] + ([core.evaluate(n, i2, j2)[1]] if i2 >= 0 else [])
         Ec = cz.get(n, [])
-        for key, vals in (("t1", Et[:1]), ("t2", Et[1:2]), ("c1", Ec[:1]), ("c2", Ec[1:2]),
-                          ("p51", [core.E_at(n, 0.51)]), ("p61", [core.E_at(n, 0.61)])):
-            if len(vals):
+        have = {"t1": Et[:1], "t2": Et[1:2], "c1": Ec[:1], "c2": Ec[1:2]}
+        have.update({f"p{v}": [core.E_at(n, v)] for v in fixed})
+        for key, vals in have.items():
+            if key in rows and len(vals):
                 rows[key][0].append(n); rows[key][1].append((vals[0] - base)/n)
     R = {k: (np.array(x), np.array(y)) for k, (x, y) in rows.items()}
 
     # (key, label, colour, size px, shape, stroke px): tie points "+", cusps hollow diamonds,
     # fixed p round dots.  Drawn in this order.
-    series = [("t1", "first tie point", "#2a78d6", 36, "plus", 5),
-              ("c1", "first cusp", "#eb6834", 34, "diamond", 4),
-              ("t2", "second tie point", "#1baf7a", 26, "plus", 4),
-              ("c2", "second cusp", "#4a3aa7", 24, "diamond", 3.5),
-              ("p51", "p = 0.51", "#222222", 12, "disc", 0),
-              ("p61", "p = 0.61", "#8a8a8a", 12, "disc", 0)]
+    STYLE = {"t1": ("first tie point", "#2a78d6", 36, "plus", 5),
+             "c1": ("first cusp", "#eb6834", 34, "diamond", 4),
+             "t2": ("second tie point", "#1baf7a", 26, "plus", 4),
+             "c2": ("second cusp", "#4a3aa7", 24, "diamond", 3.5)}
+    DOT = {0.51: "#222222", 0.61: "#8a8a8a", 0.6: "#8a8a8a", 0.501: "#1baf7a"}
+    spare = iter(["#2a78d6", "#eb6834", "#e87ba4", "#008300"])
+    series = [(k, *STYLE[k]) for k in keys]
+    series += [(f"p{v}", f"p = {v:g}", DOT.get(v) or next(spare), 12, "disc", 0) for v in fixed]
 
     g = st.NGrid(ns[0], ns[-1], height=a.height)
     # marks and strokes were sized for 60 px per n; shrink with the column, with floors
@@ -90,8 +101,12 @@ def main():
         g.marks(x, y, col, d, shape, lw=lw)
 
     what = "$E/n$" if a.absolute else "$(E(n,p) - E(n,\\frac{1}{2}))\\,/\\,n$"
-    b.set_title(f"{what}  at the first two tie points and cusps above $\\frac{{1}}{{2}}$, "
-                "and at $p = 0.51,\\ 0.61$", fontsize=44, pad=30)
+    parts = {"t1": "first tie point", "t2": "second tie point", "c1": "first cusp",
+             "c2": "second cusp"}
+    head = ", ".join(parts[k] for k in keys)
+    tail = "$p = " + ",\\ ".join(f"{v:g}" for v in fixed) + "$" if fixed else ""
+    b.set_title(f"{what}  at the {head}" + (" (above $\\frac{1}{2}$)" if keys else "")
+                + (f" and at {tail}" if tail else ""), fontsize=44, pad=30)
     b.set_xlabel("$n$", fontsize=38, labelpad=18)
     b.set_ylabel(what, fontsize=38, labelpad=22)
     b.tick_params(labelsize=28, length=12, width=2)
@@ -113,7 +128,7 @@ def main():
               framealpha=0.93)
 
     os.makedirs(a.out, exist_ok=True)
-    name = f"E_{'over_n' if a.absolute else 'minus_half_over_n'}_n{a.nmax:05d}.png"
+    name = f"E_{'over_n' if a.absolute else 'minus_half_over_n'}_n{a.nmax:05d}{a.tag}.png"
     path = g.save(os.path.join(a.out, name))
     print(f"{path}  {g.W}x{g.H} px, {g.k} px per n")
     for k, lab, *_ in series:
