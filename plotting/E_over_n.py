@@ -1,16 +1,20 @@
-"""plotting/E_over_n.py -- E/n against n for a few fixed choices of p, on one shared scale.
+"""plotting/E_over_n.py -- how far E sits above E(1/2), per n, at the first two tie points and cusps
+above 1/2 and at two fixed p.
 
-    .venv/bin/python plotting/E_over_n.py [--nmax 100] [--out plots]
+    .venv/bin/python plotting/E_over_n.py [--nmax 100] [--absolute] [--out plots]
 
-Series, for n = 2..nmax, counting tie points and cusps upward from p = 1/2:
-  first tie = first cusp   p = 1/2 itself: every mirror pair (i,n-i) ties there, and it is always a
-                           cusp (binom_core.axis_point).  E = E_half.
-  second tie point         the tie point with the smallest p* > 1/2 (binom_core.screen)
-  second cusp              the cusp with the smallest p* > 1/2 (cusps/cusps_all.csv; none at n=2)
-  p = 0.51, 0.61           binom_core.E_at
-E at the tie points is the kernel's (normalised masses); E_at uses the same convention and agrees
-with it to ~1e-14.  The second tie point IS the second cusp only at n = 3, 4, 5, 6, 7, 9 (n<=100);
-the series are drawn largest-first so coinciding points stay visible.
+Plotted: (E(n,p) - E(n,1/2))/n, log y, for n = 2..nmax, at
+  first tie point    smallest p* > 1/2  (binom_core.screen over every tie point; from n=2)
+  first cusp         smallest-p* cusp   (cusps/cusps_all.csv; from n=3)
+  second tie point   second-smallest p* (from n=3)
+  second cusp        second-smallest-p* cusp (from n=6: n=3..5 have one cusp above 1/2)
+  p = 0.51, 0.61     binom_core.E_at
+--absolute plots E/n itself instead (linear y) -- there the curves overlap almost completely.
+"First" excludes p=1/2 itself, where every mirror pair ties at once.  The first tie point is the
+first cusp only at n = 3, 4, 5, 6, 7, 9 (first_tie_vs_cusp.py, n<=5000), so those points coincide;
+tie points are drawn as "+", cusps as hollow diamonds, fixed p as dots, so coinciding points
+stay visible.  All values are positive for
+n<=100 (E > E(1/2) everywhere checked).
 """
 import argparse, os, sys
 import numpy as np
@@ -23,70 +27,89 @@ import _style as st
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import binom_core as core
 
-def lowest_cusps(path, nmax):
-    """{n: (i, j, p*, E)} for the smallest-p* cusp of each n <= nmax."""
+def cusps_by_n(path, nmax):
+    """{n: E values of that n's cusps, in increasing p*}."""
     import pyarrow.csv as pc
-    t = pc.read_csv(path, convert_options=pc.ConvertOptions(
-        include_columns=["n", "i", "j", "pstar", "E"]))
-    n, i, j, p, E = (t[c].to_numpy() for c in ("n", "i", "j", "pstar", "E"))
-    m = n <= nmax; n, i, j, p, E = n[m], i[m], j[m], p[m], E[m]
-    o = np.lexsort((p, n)); n, i, j, p, E = n[o], i[o], j[o], p[o], E[o]
+    t = pc.read_csv(path, convert_options=pc.ConvertOptions(include_columns=["n", "pstar", "E"]))
+    n, p, E = (t[c].to_numpy() for c in ("n", "pstar", "E"))
+    m = n <= nmax; n, p, E = n[m], p[m], E[m]
+    o = np.lexsort((p, n)); n, E = n[o], E[o]
     ns, first = np.unique(n, return_index=True)
-    return {int(a): (int(i[k]), int(j[k]), p[k], E[k]) for a, k in zip(ns, first)}
+    return {int(a): g for a, g in zip(ns, np.split(E, first[1:]))}
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", default="cusps/cusps_all.csv")
     ap.add_argument("--nmin", type=int, default=2)
     ap.add_argument("--nmax", type=int, default=100)
+    ap.add_argument("--absolute", action="store_true", help="plot E/n, not (E - E(1/2))/n")
     ap.add_argument("--out", default="plots")
     ap.add_argument("--height", type=int, default=st.DEFAULT_H)
     a = ap.parse_args()
 
     ns = np.arange(a.nmin, a.nmax + 1)
-    tie = np.array([(lambda s: s["E"][np.argmin(s["pstar"])])(core.screen(int(n), collect_all=True))
-                    for n in ns])/ns
-    half = np.array([core.E_half(int(n)) for n in ns])/ns
-    fc = lowest_cusps(a.csv, a.nmax)
-    cn = np.array([n for n in ns if n in fc])
-    cusp = np.array([fc[n][3] for n in cn])/cn
-    e51 = np.array([core.E_at(int(n), 0.51) for n in ns])/ns
-    e61 = np.array([core.E_at(int(n), 0.61) for n in ns])/ns
+    cz = cusps_by_n(a.csv, a.nmax)
+    rows = {k: ([], []) for k in ("t1", "c1", "t2", "c2", "p51", "p61")}
+    for n in ns:
+        n = int(n); base = 0.0 if a.absolute else core.E_half(n)
+        s = core.screen(n, collect_all=True); Et = s["E"][np.argsort(s["pstar"])]
+        Ec = cz.get(n, [])
+        for key, vals in (("t1", Et[:1]), ("t2", Et[1:2]), ("c1", Ec[:1]), ("c2", Ec[1:2]),
+                          ("p51", [core.E_at(n, 0.51)]), ("p61", [core.E_at(n, 0.61)])):
+            if len(vals):
+                rows[key][0].append(n); rows[key][1].append((vals[0] - base)/n)
+    R = {k: (np.array(x), np.array(y)) for k, (x, y) in rows.items()}
 
-    # (label, n, E/n, colour, circle diameter in px) -- drawn in this order, largest first
-    series = [("second tie point", ns, tie, "#2a78d6", 30),
-              ("second cusp", cn, cusp, "#eb6834", 20),
-              ("first tie = first cusp  (p = 1/2)", ns, half, "#222222", 15),
-              ("p = 0.51", ns, e51, "#1baf7a", 12),
-              ("p = 0.61", ns, e61, "#4a3aa7", 12)]
+    # (key, label, colour, size px, shape, stroke px): tie points "+", cusps hollow diamonds,
+    # fixed p round dots.  Drawn in this order.
+    series = [("t1", "first tie point", "#2a78d6", 36, "plus", 5),
+              ("c1", "first cusp", "#eb6834", 34, "diamond", 4),
+              ("t2", "second tie point", "#1baf7a", 26, "plus", 4),
+              ("c2", "second cusp", "#4a3aa7", 24, "diamond", 3.5),
+              ("p51", "p = 0.51", "#222222", 12, "disc", 0),
+              ("p61", "p = 0.61", "#8a8a8a", 12, "disc", 0)]
 
     g = st.NGrid(ns[0], ns[-1], height=a.height)
     ax, b = g.ax, g.back[0]
-    allv = np.concatenate([s[2] for s in series])
-    pad = 0.03*(allv.max() - allv.min())
-    ax.set_ylim(allv.min() - pad, allv.max() + pad)
-    for _, x, y, col, d in series:
-        b.plot(x, y, color=col, lw=2, alpha=0.55, zorder=2)      # back axes: under the circles
-        g.discs(x, y, col, d)
+    allv = np.concatenate([R[k][1] for k, *_ in series])
+    if a.absolute:
+        pad = 0.03*(allv.max() - allv.min()); ax.set_ylim(allv.min() - pad, allv.max() + pad)
+    else:
+        if (allv <= 0).any(): sys.exit("a value is <= 0: E fell below E(1/2) -- check before plotting")
+        ax.set_yscale("log"); ax.set_ylim(allv.min()/1.6, allv.max()*1.6)
+    for key, _, col, d, shape, lw in series:
+        x, y = R[key]
+        b.plot(x, y, color=col, lw=2, alpha=0.55, zorder=2)       # back axes: under the marks
+        g.marks(x, y, col, d, shape, lw=lw)
 
-    b.set_title("$E(n,p)/n$ at the first and second tie points and cusps, $p = 0.51$ and $p = 0.61$",
-                fontsize=44, pad=30)
+    what = "$E/n$" if a.absolute else "$(E(n,p) - E(n,\\frac{1}{2}))\\,/\\,n$"
+    b.set_title(f"{what}  at the first two tie points and cusps above $\\frac{{1}}{{2}}$, "
+                "and at $p = 0.51,\\ 0.61$", fontsize=44, pad=30)
     b.set_xlabel("$n$", fontsize=38, labelpad=18)
-    b.set_ylabel("$E/n$", fontsize=38, labelpad=22)
+    b.set_ylabel(what, fontsize=38, labelpad=22)
     b.tick_params(labelsize=28, length=12, width=2)
     b.tick_params(which="minor", length=6, width=1.2)
     from matplotlib.ticker import MultipleLocator
     b.xaxis.set_major_locator(MultipleLocator(10)); b.xaxis.set_minor_locator(MultipleLocator(1))
-    b.grid(True, alpha=0.35, lw=1.2); b.set_axisbelow(True)
-    handles = [Line2D([], [], marker="o", color=col, lw=2, alpha=0.9, ms=d*72/st.DPI, label=lab)
-               for lab, _, _, col, d in series]
-    ax.legend(handles=handles, fontsize=30, loc="lower right", framealpha=0.93)
+    b.grid(True, which="major", alpha=0.35, lw=1.2)
+    if not a.absolute: b.grid(True, which="minor", axis="y", alpha=0.15, lw=0.8)
+    b.set_axisbelow(True)
+    mk = {"plus": "+", "diamond": "D", "disc": "o"}
+    handles = [Line2D([], [], marker=mk[shape], color=col, lw=2, alpha=0.9,
+                      ms=(d if shape != "diamond" else d/np.sqrt(2))*72/st.DPI,
+                      mew=lw*72/st.DPI if lw else 1, mfc="none" if shape == "diamond" else col,
+                      label=f"{lab}  (n = {R[k][0][0]}..{R[k][0][-1]})")
+               for k, lab, col, d, shape, lw in series]
+    ax.legend(handles=handles, fontsize=30, loc="lower left" if not a.absolute else "lower right",
+              framealpha=0.93)
 
     os.makedirs(a.out, exist_ok=True)
-    path = g.save(os.path.join(a.out, f"E_over_n_n{a.nmax:05d}.png"))
+    name = f"E_{'over_n' if a.absolute else 'minus_half_over_n'}_n{a.nmax:05d}.png"
+    path = g.save(os.path.join(a.out, name))
     print(f"{path}  {g.W}x{g.H} px, {g.k} px per n")
-    for lab, x, y, _, _ in series:
-        print(f"  {lab:<34} n={x[0]}..{x[-1]}  E/n {y[0]:.5f} .. {y[-1]:.5f}")
+    for k, lab, *_ in series:
+        x, y = R[k]
+        print(f"  {lab:<17} n={x[0]}..{x[-1]}  {y[0]:.4e} .. {y[-1]:.4e}")
 
 if __name__ == "__main__":
     main()

@@ -54,7 +54,7 @@ def save(fig, path, dpi=DPI):
 #     resampling anywhere.  Rows come from the axes' own transData, so a log y axis just works.
 #   * layering: a BACK axes (grid, ticks, labels; spines pushed 1 px outside the data area),
 #     then the painted data, then a transparent FRONT axes for fitted curves, annotations and the
-#     legend.  Draw overlays on g.ax / g.axes[i]; paint with g.points / g.discs / g.density.
+#     legend.  Draw overlays on g.ax / g.axes[i]; paint with g.points / g.marks / g.discs / g.density.
 #   * k defaults to the largest integer with N*k <= DEFAULT_W, i.e. 1 px per n once N > 3000.
 #     For a short range k is large; pass points(w=...) for marks narrower than the column, and
 #     draw connecting lines on g.back[i] so they sit UNDER the painted marks.
@@ -133,23 +133,38 @@ class NGrid:
         ok = (rr >= 0) & (rr < self.ph) & (cc >= 0) & (cc < self.pw)
         self._over(panel, rr[ok], cc[ok], _hex_rgb(color), alpha)
 
-    def discs(self, n, y, color, d, panel=0, alpha=1.0, ss=4):
-        """Antialiased circles of diameter d px, centred on n's column block and y's pixel row.
-        d may exceed k: they spill into neighbouring columns.  Coverage by ss x ss supersampling."""
+    def marks(self, n, y, color, d, shape="disc", lw=3.0, panel=0, alpha=1.0, ss=4):
+        """Antialiased marks of size d px, centred on n's column block and y's pixel row.
+        shape: "disc" (filled circle, diameter d), "plus" (arms d long, lw thick), "diamond"
+        (hollow, corner to corner d, stroke lw).  d may exceed k: marks spill into neighbouring
+        columns.  Coverage by ss x ss supersampling."""
         c, r = self._cols_rows(n, y, panel)
         cx, R = self.k/2, d/2                          # centre offset from the block's first column
         ox = np.arange(int(np.floor(cx - R)) - 1, int(np.ceil(cx + R)) + 1)
         oy = np.arange(int(np.floor(0.5 - R)) - 1, int(np.ceil(0.5 + R)) + 1)
         sub = (np.arange(ss) + 0.5)/ss
-        X = (ox[:, None] + sub[None, :]).ravel() - cx
-        Y = (oy[:, None] + sub[None, :]).ravel() - 0.5
-        inside = (Y[:, None]**2 + X[None, :]**2) <= R*R
+        X = (ox[:, None] + sub[None, :]).ravel()[None, :] - cx
+        Y = (oy[:, None] + sub[None, :]).ravel()[:, None] - 0.5
+        if shape == "disc":
+            inside = X**2 + Y**2 <= R*R
+        elif shape == "plus":
+            h = lw/2
+            inside = ((np.abs(X) <= R) & (np.abs(Y) <= h)) | ((np.abs(Y) <= R) & (np.abs(X) <= h))
+        elif shape == "diamond":                       # |x|+|y| = R, stroke lw measured normal to it
+            L1 = np.abs(X) + np.abs(Y)
+            inside = (L1 <= R) & (L1 >= R - lw*np.sqrt(2))
+        else:
+            raise ValueError(f"unknown shape {shape!r}")
         cov = inside.reshape(len(oy), ss, len(ox), ss).mean(axis=(1, 3))
         ky, kx = np.nonzero(cov); a = (cov[ky, kx]*alpha).astype(np.float32)
         rr = (r[:, None] + oy[ky][None, :]).ravel(); cc = (c[:, None] + ox[kx][None, :]).ravel()
         aa = np.broadcast_to(a, (len(r), len(a))).ravel()
         ok = (rr >= 0) & (rr < self.ph) & (cc >= 0) & (cc < self.pw)
         self._over(panel, rr[ok], cc[ok], _hex_rgb(color), aa[ok])
+
+    def discs(self, n, y, color, d, panel=0, alpha=1.0, ss=4):
+        """Filled antialiased circles of diameter d px (marks(shape="disc"))."""
+        self.marks(n, y, color, d, "disc", panel=panel, alpha=alpha, ss=ss)
 
     def density(self, n, y, lo="#dde1e6", hi="#3d434b", panel=0):
         """Every (n, y) sample binned into its pixel; colour runs lo -> hi with log(count).

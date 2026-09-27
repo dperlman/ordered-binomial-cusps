@@ -112,8 +112,8 @@ in step with the log: when a result is locked in or corrected, update both.  No 
 - plotting/max_pstar.py: the largest cusp p* of each n (NGrid), coloured by the width of the pair
   that gives it; fits the limit (~0.6522).  --nmin/--nmax/--lines/--no-fit for a close-up window,
   where markers are circles with area proportional to the pair width.
-- plotting/E_over_n.py: E/n vs n (default n<=100) at p=1/2 (the first tie point AND first cusp:
-  every mirror pair ties there), the second tie point, the second cusp, p=0.51 and p=0.61.
+- plotting/E_over_n.py: (E - E(1/2))/n vs n (default n<=100, log y) at the first and second tie
+  points and cusps above 1/2 and at p=0.51, 0.61; --absolute plots E/n instead.
 - plotting/lowest_cusp.py: the minimum-E cusp of each n -- its E-E(1/2), its p*, and its width.
 - Cusp decisions are certified (double-precision screen with margin 1e-6, mpmath interval
   arithmetic for borderline cases).  Descriptive columns (E, F3, slopes) are double precision.
