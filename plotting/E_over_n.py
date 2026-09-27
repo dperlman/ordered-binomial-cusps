@@ -4,7 +4,8 @@ above 1/2 and at two fixed p.
     .venv/bin/python plotting/E_over_n.py [--nmax 100] [--absolute] [--out plots]
 
 Plotted: (E(n,p) - E(n,1/2))/n, log y, for n = 2..nmax, at
-  first tie point    smallest p* > 1/2  (binom_core.screen over every tie point; from n=2)
+  first tie point    smallest p* > 1/2  (exhaustive pair scan, first_tie_vs_cusp._two_lowest;
+                     E from binom_core.evaluate; from n=2)
   first cusp         smallest-p* cusp   (cusps/cusps_all.csv; from n=3)
   second tie point   second-smallest p* (from n=3)
   second cusp        second-smallest-p* cusp (from n=6: n=3..5 have one cusp above 1/2)
@@ -26,6 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _style as st
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import binom_core as core
+from first_tie_vs_cusp import _two_lowest
 
 def cusps_by_n(path, nmax):
     """{n: E values of that n's cusps, in increasing p*}."""
@@ -52,7 +54,8 @@ def main():
     rows = {k: ([], []) for k in ("t1", "c1", "t2", "c2", "p51", "p61")}
     for n in ns:
         n = int(n); base = 0.0 if a.absolute else core.E_half(n)
-        s = core.screen(n, collect_all=True); Et = s["E"][np.argsort(s["pstar"])]
+        i1, j1, _, i2, j2, _ = _two_lowest(n, core.lnC_arr(n))
+        Et = [core.evaluate(n, i1, j1)[1]] + ([core.evaluate(n, i2, j2)[1]] if i2 >= 0 else [])
         Ec = cz.get(n, [])
         for key, vals in (("t1", Et[:1]), ("t2", Et[1:2]), ("c1", Ec[:1]), ("c2", Ec[1:2]),
                           ("p51", [core.E_at(n, 0.51)]), ("p61", [core.E_at(n, 0.61)])):
@@ -70,6 +73,10 @@ def main():
               ("p61", "p = 0.61", "#8a8a8a", 12, "disc", 0)]
 
     g = st.NGrid(ns[0], ns[-1], height=a.height)
+    # marks and strokes were sized for 60 px per n; shrink with the column, with floors
+    sc = min(1.0, max(0.3, g.k/60))
+    series = [(k, lab, col, max(4, round(d*sc)), shape, max(1.3, lw*sc))
+              for k, lab, col, d, shape, lw in series]
     ax, b = g.ax, g.back[0]
     allv = np.concatenate([R[k][1] for k, *_ in series])
     if a.absolute:
@@ -79,7 +86,7 @@ def main():
         ax.set_yscale("log"); ax.set_ylim(allv.min()/1.6, allv.max()*1.6)
     for key, _, col, d, shape, lw in series:
         x, y = R[key]
-        b.plot(x, y, color=col, lw=2, alpha=0.55, zorder=2)       # back axes: under the marks
+        b.plot(x, y, color=col, lw=2 if g.k >= 20 else 1.1, alpha=0.55, zorder=2)   # under marks
         g.marks(x, y, col, d, shape, lw=lw)
 
     what = "$E/n$" if a.absolute else "$(E(n,p) - E(n,\\frac{1}{2}))\\,/\\,n$"
@@ -90,7 +97,9 @@ def main():
     b.tick_params(labelsize=28, length=12, width=2)
     b.tick_params(which="minor", length=6, width=1.2)
     from matplotlib.ticker import MultipleLocator
-    b.xaxis.set_major_locator(MultipleLocator(10)); b.xaxis.set_minor_locator(MultipleLocator(1))
+    span = ns[-1] - ns[0]
+    major, minor = (10, 1) if span <= 150 else (50, 10) if span <= 600 else (100, 20)
+    b.xaxis.set_major_locator(MultipleLocator(major)); b.xaxis.set_minor_locator(MultipleLocator(minor))
     b.grid(True, which="major", alpha=0.35, lw=1.2)
     if not a.absolute: b.grid(True, which="minor", axis="y", alpha=0.15, lw=0.8)
     b.set_axisbelow(True)
