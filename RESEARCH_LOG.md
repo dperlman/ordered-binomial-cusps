@@ -1467,3 +1467,65 @@ band-m tie points -- where the cusps are -- exactly when n(2p-1) = m.  Also visi
 falls onto the first-cusp curve at exactly the n where band 1 holds two cusps (FACTS S8: 21, 50,
 76, 125, 321 in this range), and the first tie point stays 12-17% above the first cusp in
 (E-E(1/2))/n at every n<=1000 (even n 1.07-1.17, odd n 1.03-1.12, settling at 1.167 / 1.117).
+
+### 2026-09-27 (Claude Code): the k-th tie point above 1/2, by rank -- band 1 first, innermost out
+plotting/E_over_n.py --series t1,t2,t5,t10,t20,t50,t100 (n<=1000), with first_tie_vs_cusp.lowest_k,
+an exhaustive scan keeping the K+1 smallest ln rho (order checked against the full kernel listing at
+n = 5, 20, 57, 300; smallest gap between consecutive ranks 1..101 over all n<=1000: 5.3e-9).
+- The first ~n/2 tie points above 1/2 are the band-1 pairs (i, n+1-i), innermost first: rank k is the
+  band-1 pair of width ~2k-1 (n=1000: rank 20 has width 39, rank 50 width 99).  At n=1000 the first
+  pair outside band 1 is rank 480, of 499 band-1 pairs.
+- So rank k is in band 1 only once band 1 has >= k members, n >~ 2k.  Below that it comes from bands
+  2-5, switching bands back and forth.  The final switch into band 1 is a visible jump UP in
+  (E - E(1/2))/n: rank 50 at n=104 (band 2, width 1 -> band 1, width 99), rank 100 at n=208.
+  After it, ranks 50 and 100 sit on their own higher curves; ranks 1-20 stay in the low band with the
+  first tie point and the first cusp.
+
+### 2026-09-27 (Claude Code): the even/odd alternation of E at the k-th tie point, demodulated
+plotting/parity_alternation.py, tie ranks 1, 2, 5, 10, 20, 50, 100, n = 20..1000, y = (E - E(1/2))/n.
+alpha(n) = ((-1)^n/2)[ln y(n) - (ln y(n-1) + ln y(n+1))/2]: the second difference (gain 4 at period 2,
+~0 for smooth variation) in ln y, demodulated by (-1)^n, so a pure y = s exp((-1)^n alpha) returns
+alpha.  Points where the pair's band changes across n-1..n+1 are left out (101 of them, all early or
+at the rank-50/100 family switches).
+- The result is SMOOTH for every rank: over the last 100 n, even-n and odd-n alpha agree to 1e-4,
+  so the alternation is a clean period-2 modulation with a slowly varying amplitude.
+- ODD n sit higher at every rank (alpha < 0).  Ranks 1, 2, 5: alpha = -0.151 at n = 1000, i.e.
+  y(odd)/y(even) = e^{0.302} = 1.35 (spot check: y = 1.7922e-8, 2.4184e-8, 1.7833e-8 at n = 998,
+  999, 1000).  Rank 10 approaches -0.15 from below; rank 20 is at -0.173 and still moving; ranks 50
+  and 100, after their switch into band 1, start near 0 and drift down (-0.077, -0.022 at n=1000).
+  Plausibly all ranks head to the same limit near -0.15; not established.
+- Mechanism, heuristic: for rank 1 the pair has width 1 at even n and width 2 at odd n (FACTS S13);
+  the rank-k band-1 pair's width likewise alternates in parity with n, so the tie geometry itself
+  differs between even and odd n.
+- First-difference variant (--order 1): ((-1)^n/2)[ln y(n) - ln y(n-1)] = alpha + ((-1)^n/2) Delta ln s.
+  As predicted it carries the same alpha (ribbon centre -0.151 for ranks 1-2) plus a residual
+  zigzag from the trend: even-minus-odd 0.0026 over the last 100 n for rank 1, consistent with
+  d ln y/dn ~ 2.6/n for y falling like n^-2.6.  It needs only n-1 and n, so it leaves out fewer points
+  (69 vs 101) and shows the early band-2/3 stretches of ranks 50 and 100, where the offset is
+  POSITIVE (even n higher, up to ~+0.04 for rank 50 near n=75) -- the parity sign follows the band.
+  That last point is read off the plot, not tested.
+- CORRECTION to the framing above (2026-09-29, after the user questioned it).  The band-switch points
+  are not "spurious": the rank-k series really jumps there.  Leaving them out was a modelling choice
+  (y = smooth x e^{+-alpha} within one band family), not an error correction.
+- Arithmetic fact behind the period-2 lock: a band-b pair (i+j = n+b) has width n+b-2i, so its width
+  parity is the parity of n+b, exactly.  Within one band, even n and odd n always get pairs of
+  opposite width parity (rank 1: width 1 at even n, width 2 at odd n).
+- But the DIRECTION is band-dependent.  Test of "the even-width pair gives the larger y", on all 6799
+  non-switch points of ranks 1..100, n = 10..1000: band 1 agrees at 6563/6593 (99.5%); band 2 agrees
+  at only 35/156 (mostly the reverse); bands 3-9 42/50 (few points).  So parity sets the period, the
+  band sets the sign, and which band holds rank k depends on how the band families slide past each
+  other -- the user's reading.
+- Band-coloured view (plotting/parity_by_band.py, rank 100, n = 20..400, no points left out, each
+  point and each n's background column coloured by band i+j-n).  y is a chain of arcs, one per band,
+  moving inward with n: bands >=5 below n~60, 4 to ~73, 3 to 107, 2 to 207, 1 from 208; each move to
+  a lower band is a jump UP in y (n ~ 74, 107, 208) and the alpha spikes sit exactly on them.  Below
+  n~110 the band flips every few n; after that the regions are long, apart from single band-1 n at
+  ~120, 137, 160 inside the band-2 stretch.
+- CORRECTION to the band-2 line of the width-parity test above: in rank 100's long band-2 stretch
+  (n ~ 110-205) alpha is ~ -0.002, i.e. there is almost NO alternation, so "band 2 mostly the
+  reverse" is a sign measured on something near zero and is weaker than it looked.  Band 3
+  (n ~ 75-105) has alpha ~ -0.03, odd n clearly higher.
+- The sign can flip WITHIN one band: after rank 100 enters band 1 at n=208, alpha starts strongly
+  positive (even n higher, +0.27 decaying), crosses zero near n ~ 228, and settles slightly negative
+  (-0.01 at n=400, -0.022 at 1000).  So the band fixes the period-2 lock (width parity = parity of
+  n+b) but not the direction; the direction varies along a single band's arc.

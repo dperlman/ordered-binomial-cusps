@@ -113,7 +113,12 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   that gives it; fits the limit (~0.6522).  --nmin/--nmax/--lines/--no-fit for a close-up window,
   where markers are circles with area proportional to the pair width.
 - plotting/E_over_n.py: (E - E(1/2))/n vs n (default n<=100, log y) at the first and second tie
-  points and cusps above 1/2 and at fixed p; --series/--p choose which, --absolute plots E/n.
+  points and cusps above 1/2 and at fixed p; --series/--p choose which (tK = K-th tie point by
+  rank, cK = K-th cusp), --absolute plots E/n.
+- plotting/parity_alternation.py: the even/odd alternation of those E_over_n series, demodulated:
+  alpha(n) = ((-1)^n/2)[ln y(n) - (ln y(n-1)+ln y(n+1))/2]; leaves out
+  n where the pair changes band; --order 1 uses the first difference.  E_over_n.series_values()
+  is the shared computation.
 - plotting/lowest_cusp.py: the minimum-E cusp of each n -- its E-E(1/2), its p*, and its width.
 - Cusp decisions are certified (double-precision screen with margin 1e-6, mpmath interval
   arithmetic for borderline cases).  Descriptive columns (E, F3, slopes) are double precision.

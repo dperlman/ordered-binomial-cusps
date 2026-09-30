@@ -30,6 +30,25 @@ def _two_lowest(n, lnC):
                 b2, i2, j2 = v, i, j
     return i1, j1, b1, i2, j2, b2
 
+@njit(cache=True)
+def lowest_k(n, lnC, K):
+    """The K+1 smallest ln rho over tie points with i+j>n, in increasing order, as arrays
+    (i, j, lnrho).  Fewer if n has fewer tie points.  The extra (K+1-th) entry lets a caller
+    check the gap that separates the K-th from the next."""
+    m = K + 1
+    bi = np.full(m, -1); bj = np.full(m, -1); bv = np.full(m, np.inf)
+    for i in range(1, n):
+        for j in range(max(i + 1, n + 1 - i), n + 1):
+            v = (lnC[i] - lnC[j])/(j - i)
+            if v < bv[m-1]:
+                t = m - 1
+                while t > 0 and bv[t-1] > v:           # insertion into the sorted buffer
+                    bv[t] = bv[t-1]; bi[t] = bi[t-1]; bj[t] = bj[t-1]; t -= 1
+                bv[t] = v; bi[t] = i; bj[t] = j
+    c = 0
+    while c < m and bi[c] >= 0: c += 1
+    return bi[:c], bj[:c], bv[:c]
+
 def first_tie(n):
     i1, j1, b1, i2, j2, b2 = _two_lowest(n, lnC_arr(n))
     p = lambda v: 1.0/(1.0 + np.exp(-v))

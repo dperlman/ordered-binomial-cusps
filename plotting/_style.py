@@ -54,7 +54,7 @@ def save(fig, path, dpi=DPI):
 #     resampling anywhere.  Rows come from the axes' own transData, so a log y axis just works.
 #   * layering: a BACK axes (grid, ticks, labels; spines pushed 1 px outside the data area),
 #     then the painted data, then a transparent FRONT axes for fitted curves, annotations and the
-#     legend.  Draw overlays on g.ax / g.axes[i]; paint with g.points / g.marks / g.discs / g.density.
+#     legend.  Draw overlays on g.ax / g.axes[i]; paint with g.points / g.marks / g.discs / g.density; g.column_fill tints columns.
 #   * k defaults to the largest integer with N*k <= DEFAULT_W, i.e. 1 px per n once N > 3000.
 #     For a short range k is large; pass points(w=...) for marks narrower than the column, and
 #     draw connecting lines on g.back[i] so they sit UNDER the painted marks.
@@ -132,6 +132,18 @@ class NGrid:
         cc = np.broadcast_to(c[:, None, None] + np.arange(w)[None, None, :], shape).ravel()
         ok = (rr >= 0) & (rr < self.ph) & (cc >= 0) & (cc < self.pw)
         self._over(panel, rr[ok], cc[ok], _hex_rgb(color), alpha)
+
+    def column_fill(self, n, color, panel=0, alpha=0.15):
+        """Tint the full height of n's column block(s) -- background bands along n.  Paint it
+        before the marks so they sit on top."""
+        n = np.asarray(n)
+        if len(n) == 0: return
+        if not np.issubdtype(n.dtype, np.integer) or n.min() < self.nmin or n.max() > self.nmax:
+            raise ValueError("n must be integers inside the grid's range")
+        cc = ((n - self.nmin)*self.k)[:, None] + np.arange(self.k)[None, :]
+        cc = np.broadcast_to(cc.ravel()[None, :], (self.ph, cc.size))
+        rr = np.broadcast_to(np.arange(self.ph)[:, None], cc.shape)
+        self._over(panel, rr.ravel(), cc.ravel(), _hex_rgb(color), alpha)
 
     def marks(self, n, y, color, d, shape="disc", lw=3.0, panel=0, alpha=1.0, ss=4):
         """Antialiased marks of size d px, centred on n's column block and y's pixel row.
