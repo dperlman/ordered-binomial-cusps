@@ -119,6 +119,8 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   alpha(n) = ((-1)^n/2)[ln y(n) - (ln y(n-1)+ln y(n+1))/2]; leaves out
   n where the pair changes band; --order 1 uses the first difference.  E_over_n.series_values()
   is the shared computation.
+- plotting/parity_by_band.py: one tie rank (default #100, n=20..400): y and alpha with every point
+  and every n's background column coloured by the band i+j-n of the pair (NGrid.column_fill).
 - plotting/lowest_cusp.py: the minimum-E cusp of each n -- its E-E(1/2), its p*, and its width.
 - Cusp decisions are certified (double-precision screen with margin 1e-6, mpmath interval
   arithmetic for borderline cases).  Descriptive columns (E, F3, slopes) are double precision.
