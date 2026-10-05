@@ -30,6 +30,8 @@ cusps_n*.csv.gz
 plots/
 #   lower_bound_proof_plots/   plotting/lower_bound/*.py (the L plots; default output dir)
 lower_bound_proof_plots/
+#   simplex_figures/          plotting/simplex/*.py (the simplex geometry figures)
+simplex_figures/
 
 # --- run logs (never tracked; regenerate the run instead) ---
 *.log

@@ -135,6 +135,17 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   (certificate, active certificate, L, switch point, slack, margin, tie point, cusp) and a
   glossary panel; label positions are hand-tuned for n = 12.  This plotting thread is
   visualisation only: no proofs, assertions or tests in these scripts.
+- plotting/simplex/: geometry FIGURES in the simplex of mass vectors (f_0..f_n); output to
+  simplex_figures/ (gitignored).  Visualisation only, like plotting/lower_bound/.  _simplex.py:
+  exact polygons by half-space clipping -- chambers, B = {E <= E(1/2)} (one facet per permutation:
+  E is the permutohedron's support function), {L <= L(1/2)} (one half-plane per certificate W_c),
+  the binomial curve.  triangle_n2.py: the n = 2 triangle with all of these, the sorted sliver and
+  sort(f_p).
+  _simplex3d.py: the n = 3 tetrahedron in R^3 (half-turn about z = the p <-> 1-p symmetry) and exact
+  3D polytopes via scipy HalfspaceIntersection/ConvexHull.  tetra_n3.py: the same objects at n = 3;
+  writes tetra_n3.html (plotly, interactive, layers toggled from the legend) and tetra_n3.png (three
+  matplotlib views).  plotly is in .venv for this (installed 2026-10-04).  .claude/launch.json
+  serves simplex_figures/ on port 8765 so the HTML can be previewed in the app's browser pane.
 - Cusp decisions are certified (double-precision screen with margin 1e-6, mpmath interval
   arithmetic for borderline cases).  Descriptive columns (E, F3, slopes) are double precision.
 - Validated: n<=200 reproduces an independent 50-digit run exactly.
