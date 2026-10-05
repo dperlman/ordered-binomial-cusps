@@ -25,7 +25,10 @@ def polytope(halfspaces, interior):
     rows += [(-np.eye(4)[k], 0.0) for k in range(4)]
     H = np.array([np.r_[a @ _M[:, :3], a @ _M[:, 3] - t] for a, t in rows])
     hsi = HalfspaceIntersection(H, xyz(interior))
-    V = np.unique(np.round(hsi.intersections, 12), axis=0)      # a vertex on >3 planes repeats
+    return hull(np.unique(np.round(hsi.intersections, 12), axis=0))   # a vertex on >3 planes repeats
+
+def hull(V):
+    """Vertices (k, 3) -> (V, faces): convex hull with coplanar triangles merged into polygons."""
     hull = ConvexHull(V)
     groups = {}
     for simp, eq in zip(hull.simplices, hull.equations):

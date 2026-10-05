@@ -146,6 +146,23 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   writes tetra_n3.html (plotly, interactive, layers toggled from the legend) and tetra_n3.png (three
   matplotlib views).  plotly is in .venv for this (installed 2026-10-04).  .claude/launch.json
   serves simplex_figures/ on port 8765 so the HTML can be previewed in the app's browser pane.
+  _slice.py / slice_n4.py: n >= 4 cannot be drawn whole, and PROJECTING would replace B by its
+  shadow, which covers the curve -- so cut instead.  The 3-flat through x* = f_{1/2} spanned by the
+  tangent and the symmetric directions contains g'(1/2) and g''(1/2) (even derivatives symmetric,
+  odd antisymmetric), so the curve lies in it to second order.  slice_n4.py draws B, {L <= L(1/2)},
+  the walls and the certificates cut exactly in that flat (HTML) and in its depth-0 plane, the
+  curve's osculating plane (PNG panels a, b), with the curve's distance off the cut (panel d).
+  --n 5 works too (the flat is still 3D); from n = 6 it would be 4D.
+  kaleidoscope_n2.py: E and L as two FOLDED PATHS in the n = 2 triangle.  The (n+1)! rearrangements
+  of f_p are mirror copies of the curve; E's path is sort(f_p) (the copy in the sliver, bounces at
+  ties), L's path is f_p rearranged by the active certificate's ranking (jumps at switch points).
+  Both measured by the height <(0..n), y>; in the triangle embedding height = 2 x horizontal position.
+  PHANTOM DEFICIT: L scores certificate c with a_c = n + 1/2 - 2|k - c|, which ranks by distance on
+  the whole integer line, so positions outside 0..n use up rank slots; W_c = <sigma_c, f> - Delta_c,
+  Delta_c = E_p[(2c - n - 1/2 - K)^+] (c > n/2; zero for c = n/2 +- 1/4).  At n = 2 and 3 every
+  binomial ordering is a distance ordering, so max_c <sigma_c, f_p> = E exactly: all of n = 2's
+  slack, including L's late switch at 1/sqrt(2), comes from the deficit.  Wrong-ordering slack
+  (E > max_c <sigma_c, f>) first appears at n = 4.
 - Cusp decisions are certified (double-precision screen with margin 1e-6, mpmath interval
   arithmetic for borderline cases).  Descriptive columns (E, F3, slopes) are double precision.
 - Validated: n<=200 reproduces an independent 50-digit run exactly.
