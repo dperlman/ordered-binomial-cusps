@@ -1529,3 +1529,45 @@ at the rank-50/100 family switches).
   positive (even n higher, +0.27 decaying), crosses zero near n ~ 228, and settles slightly negative
   (-0.01 at n=400, -0.022 at 1000).  So the band fixes the period-2 lock (width parity = parity of
   n+b) but not the direction; the direction varies along a single band's arc.
+
+### 2026-10-03 (Claude Code): the shape of L near 1/2 -- arches in sqrt(n), troughs in n^1.5
+Plots of L(p) = n + 1/2 - 2 D(p) (the (★) lower bound; the user's term is "L", or "certificate
+envelope" when more specificity is needed), in plotting/lower_bound/ (L_small_n.py, L_scaled.py,
+L_arches.py; shared grid in _data.py, built only from binom_core and star_check).  PNGs in
+lower_bound_proof_plots/ (gitignored).  Double precision, descriptive; nothing here is certified.
+Every run asserts L <= E at every grid point (max(L - E) <= 1e-11 at n <= 3001: rounding).
+x = n(p - 1/2) throughout.
+1. TWO SCALES.  Near 1/2, E - E(1/2) and L - L(1/2) are NOT ~ x^2 n^-1.5 as curves.  Between switch
+   points both form arches of height O(n^-1/2); only the troughs (x ~ m/2, where the switch points
+   and the cusps sit) are O(n^-1.5) and lie on 2 sqrt(2/pi) x^2.  So the n^-1.5 law of the
+   2026-09-24 entries is a statement about the troughs only.
+2. ARCH LIMIT (NUMERICAL + HEURISTIC).  At fixed x,
+        sqrt(n) (L - L(1/2))  ->  A(x) = (1/4 - 4 d(x)^2)/sqrt(2 pi),   d(x) = dist(x, Z/2 + 1/4),
+   a periodic chain of identical parabolic arches, height 1/(4 sqrt(2 pi)) = 0.0997 at x in
+   Z/2 + 1/4, zero at x in Z/2, the same for both parities.  E has the same limit (E = L exactly on
+   most of each arch).  Heuristic: with the active centre c fixed, the local CLT gives
+   E_p|K - c| ~ sigma sqrt(2/pi) + 2 (c - np)^2/sqrt(2 pi n) + a lattice term (Poisson summation:
+   -f(c) B2(frac c)) that is the SAME for every quarter-point c, so it cancels in D(1/2) - D(p).
+   The arch height is the same constant 1/(4 sqrt(2 pi)) as the parity lattice term of the trough
+   limits (2026-09-24, result 4).
+   Checked at n = 100, 101, 1000, 1001, 4000, 4001 and x = 0.125, 0.25, 0.75, 1.25, 1.375, 2.25:
+   n (sqrt(n)(L - L(1/2)) - A(x)) converges (agreeing to 3-4 digits between n = 1000 and 4000), so
+   the error is O(1/n) at fixed x.
+3. NEXT ORDER (NUMERICAL).  n^1.5 (L - L(1/2)) = n A(x) + 2 sqrt(2/pi) x^2 + r(x) + o(1).  At the arch
+   peaks (x = 1/4, 3/4, 5/4, 9/4 checked) r = -0.0810 (n even), +0.0187 (n odd), the same at every
+   peak; the difference is 0.0997 = 1/(4 sqrt(2 pi)), and 0.0187 matches 3/(64 sqrt(2 pi)) =
+   0.01870 to 3 digits (unexplained, possibly a coincidence).  Between the peaks r is a sawtooth: it
+   decreases across each cell and jumps up at every switch point, and the jumps grow with x
+   (L_arches.py, panel b).  This looks like the arches tilting (the binomial's skewness, ~x/n);
+   not derived.
+4. TROUGH SHAPE.  At a switch point L is a sharp V and E a rounded V lying above it.  The slopes in
+   x are ~n, so the right local variable is u = n (x - x_m) = n^2 (p - p_m), and in u the V's
+   are n-independent (n = 30..1001, m = 1, 2).  The minimum of E (the cusp) is slightly LEFT of L's
+   corner.  E - L at the trough is the 38% (n even) / 27% (n odd) of the band-1 margin that L gives
+   up (2026-09-24, result 3).  In the n^1.5 next-order view (L_arches.py, panel c) E departs from L
+   only just after each switch point.
+5. SLACK E - L (L_small_n.py, n = 12, 25).  E - L is exactly 0 on whole stretches of p, e.g. from
+   1/2 to the first tie point, where the distance-from-c ranking IS the true ranking.  It is
+   positive only where a tie point has broken the distance order, and peaks at the switch points.
+   Over all of [0,1] it is largest near the ends (p ~ 0.03-0.06 and mirror, at n = 12, 25) and
+   is 0 at p = 0, 1/2 and 1.

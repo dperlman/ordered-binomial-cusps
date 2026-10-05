@@ -28,6 +28,8 @@ cusps_n*.csv.gz
 
 # --- plot outputs (large PNGs; regenerate with plotting/*.py) ---
 plots/
+#   lower_bound_proof_plots/   plotting/lower_bound/*.py (the L plots; default output dir)
+lower_bound_proof_plots/
 
 # --- run logs (never tracked; regenerate the run instead) ---
 *.log

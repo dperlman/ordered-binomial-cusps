@@ -122,6 +122,19 @@ in step with the log: when a result is locked in or corrected, update both.  No 
 - plotting/parity_by_band.py: one tie rank (default #100, n=20..400): y and alpha with every point
   and every n's background column coloured by the band i+j-n of the pair (NGrid.column_fill).
 - plotting/lowest_cusp.py: the minimum-E cusp of each n -- its E-E(1/2), its p*, and its width.
+- plotting/lower_bound/: plots of L(p) = n + 1/2 - 2 D(p), the lower bound of the (★) reduction.
+  TERMINOLOGY (user, 2026-10-03): call it L, the established convention; "certificate envelope"
+  when more specificity is needed (it is the upper envelope of the certificates W_c).  Not
+  "witness".  Code lives here; PNGs go to lower_bound_proof_plots/ (gitignored) -- keep code and
+  plots in separate folders.  _data.py is the shared E/L grid (exact kinks: uniform + every tie
+  point and switch point), built only from binom_core and star_check.  L_small_n.py: E, L and
+  every W_c at one small n, plus the slack E - L.  L_scaled.py: n^1.5 scaling (troughs onto
+  2 sqrt(2/pi) x^2) with trough close-ups in u = n(x - x_m).  L_arches.py: sqrt(n) scaling, where
+  E and L converge to the arch chain A(x) (RESEARCH_LOG 2026-10-03), and the next order.
+  L_glossary.py: explanatory figure -- n = 12 close up above 1/2 with every term labelled
+  (certificate, active certificate, L, switch point, slack, margin, tie point, cusp) and a
+  glossary panel; label positions are hand-tuned for n = 12.  This plotting thread is
+  visualisation only: no proofs, assertions or tests in these scripts.
 - Cusp decisions are certified (double-precision screen with margin 1e-6, mpmath interval
   arithmetic for borderline cases).  Descriptive columns (E, F3, slopes) are double precision.
 - Validated: n<=200 reproduces an independent 50-digit run exactly.
