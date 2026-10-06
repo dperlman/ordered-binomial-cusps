@@ -42,7 +42,7 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   E_half, E_at (E at any p), the numba screening kernel (tie_kernel/screen), certify()/certify_escalating(),
   evaluate(), recheck().  Every other script imports it.  Since 2026-10-05 it is its OWN repository,
   ~/git/OBD-core (github.com/dperlman/OBD-core, public), installed editable into .venv; until then it
-  was obd_core.py in this repo, which is the name the RESEARCH_LOG uses before that date.  The OBD
+  was binom_core.py in this repo, which is the name the RESEARCH_LOG uses before that date.  The OBD
   repo (~/git/OBD) imports it too, so its API is a contract: change it in OBD-core, run its tests
   (pytest there), and tag a release when OBD should pick the change up.  Do not re-derive any of this elsewhere --
   before this existed the mass recurrence, the rank merge, the F3 formula and E_half were each
