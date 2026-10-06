@@ -49,18 +49,9 @@ from multiprocessing import Pool
 import numpy as np
 
 import obd_core as core
-from obd_core import TAG_CHECK, TAG_MIN
+from obd_core import TAG_CHECK
 
 SCHEMA_VERSION = 3
-
-def _screen_chunk(a):
-    n, lo, hi = a
-    return core.screen(n, collect_all=True, i_lo=lo, i_hi=hi)
-
-def _certify_one(a):
-    n, i, j = a
-    v, how = core.certify_escalating(n, i, j)
-    return (v == 'MIN'), (how if v else 'UNRESOLVED')
 
 def build(n, data, force=False, verify=None, workers=1, pool=None):
     import pyarrow as pa, pyarrow.parquet as pq
@@ -68,29 +59,13 @@ def build(n, data, force=False, verify=None, workers=1, pool=None):
     if os.path.exists(os.path.join(tdir, "part.parquet")) and not force:
         print(f"n={n}: exists, skipping (use --force)"); return None
     t0 = time.time()
-    r = _screen_parallel(n, workers, pool)
-    for k in ('tag_alt', 'rbnd'): r.pop(k, None)   # trigger diagnostics; not part of the dataset
-    o = np.argsort(r['pstar'], kind='stable')
-    r = {k: v[o] for k, v in r.items()}
-    # prepend the symmetry axis p=1/2 (see obd_core.axis_point)
-    aSm, aSp, aE, akap, apairs = core.axis_point(n)
-    axis = dict(i=0, j=n, pstar=0.5, ln_fi=np.log(akap/n), E=aE, S_minus=aSm,
-                F3=np.nan, tag=(TAG_MIN if aSm < 0 < aSp else 0))
-    for k in r: r[k] = np.concatenate([np.array([axis[k]], dtype=r[k].dtype), r[k]])
-    n_pairs = np.ones(len(r['i']), np.int16); n_pairs[0] = apairs
+    # every tie point, sorted, with the p=1/2 axis as row 0 and every CHECK certified -- the same
+    # screen and certify() the generator uses (obd_core.tie_table)
+    r = core.tie_table(n, workers=workers, pool=pool)
+    is_cusp, decided, n_pairs = r['is_cusp'], r['decided_by'], r['n_tied_pairs']
+    apairs = int(n_pairs[0])
     c = len(r['i'])
-    # --- certify every CHECK-tagged tie point, exactly as the generator does ---
-    decided = np.array(['double']*c, dtype=object)
-    decided[0] = 'symmetry'            # the axis row is settled exactly by E(p) = E(1-p)
-    is_cusp = r['tag'] == TAG_MIN
     checks = np.flatnonzero(r['tag'] == TAG_CHECK)
-    t_cert = time.time()
-    if len(checks):
-        args = [(n, int(r['i'][t]), int(r['j'][t])) for t in checks]
-        res = pool.map(_certify_one, args, chunksize=1) if pool else [_certify_one(a) for a in args]
-        for t, (cusp, how) in zip(checks, res):
-            is_cusp[t] = cusp; decided[t] = how
-    t_cert = time.time() - t_cert
     n_unres = int((decided == 'UNRESOLVED').sum())
     Eh = core.E_half(n)
     gap_next = np.full(c, np.nan); gap_prev = np.full(c, np.nan)
@@ -137,8 +112,7 @@ def build(n, data, force=False, verify=None, workers=1, pool=None):
     write(pa.table(sub), cdir)
     dt = time.time()-t0
     msg = (f"n={n}: {c:,} rows (incl. p=1/2 axis, {apairs} pairs), {int(is_cusp.sum())} cusps, "
-           f"{len(checks)} certified "
-           f"({t_cert:.1f}s of {dt:.1f}s)")
+           f"{len(checks)} certified ({dt:.1f}s)")
     if n_unres: msg += f"  *** {n_unres} UNRESOLVED ***"
     print(msg + f" -> {tdir}")
     if verify: verify_against_csv(n, verify, r, is_cusp, decided)
@@ -151,18 +125,6 @@ def build(n, data, force=False, verify=None, workers=1, pool=None):
         if new: w.writeheader()
         w.writerow(line)
     return line
-
-def _screen_parallel(n, workers, pool):
-    """Screen one n, splitting the i-loop into work-balanced chunks across `pool`.
-
-    Each tie point is computed identically however the range is cut, and the chunks are
-    concatenated in i order, so the result is independent of `workers`.
-    """
-    if not pool or workers <= 1:
-        return core.screen(n, collect_all=True)
-    chunks = core.work_chunks(n, workers)
-    parts = pool.map(_screen_chunk, [(n, a, b) for a, b in chunks])
-    return {k: np.concatenate([p[k] for p in parts]) for k in parts[0]}
 
 def verify_against_csv(n, path, r, is_cusp, decided):
     """Regression check: do we agree with the certified CSV table where it covers this n?"""
