@@ -1596,3 +1596,8 @@ x = n(p - 1/2) throughout.
   "maximum" labels are impossible (fact 11).  The p=1/2 slopes read +/-22.71 at n=1000 against
   +/-25.23.  OBD's E and tie p are fine (errors ~5e-12 and ~2e-13).  Fix: OBD to take slopes,
   D (from ln f(i)) and certified cusp flags from obd_core and regenerate its shards and explorers.
+- DONE the same day: OBD now builds every tie point from obd_core.tie_table (OBD-core v0.2.1,
+  which also gained certify_exact() for adjacent pairs: at n=2 the pair (1,2) has S_- = 0 EXACTLY,
+  which interval arithmetic cannot settle -- it is NOT a cusp).  OBD regenerated n=2..1000: cusp
+  sets identical to cusps/nNNNNN.csv for every n=3..1000, no negative D, nothing unresolved.
+  dump_ties.py now builds on tie_table too (byte-identical Parquet).
