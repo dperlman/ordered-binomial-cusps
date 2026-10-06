@@ -9,7 +9,7 @@ What is drawn (RESEARCH_LOG.md section 4 and the 2026-09-24 claude.ai entry, ite
   L                    L(p) = max_c W_c(p) = n + 1/2 - 2 D(p), the certificate envelope;
                        L <= E everywhere, L(1/2) = E(1/2).
   switch points        p_m (star_check.switch_points), where the maximising c moves; L's kinks.
-  E(n,p)               binom_core.E_at on the grid; cusps (local minima) from cusps/nNNNNN.csv,
+  E(n,p)               obd_core.E_at on the grid; cusps (local minima) from cusps/nNNNNN.csv,
                        every other tie point as a small tick.
 Panels: left column the whole of [0,1], right column a close-up above 1/2 with a top axis in
 x = n(p - 1/2) (the variable of L_scaled.py and L_arches.py).  Top row the curves, bottom row the gap E - L.

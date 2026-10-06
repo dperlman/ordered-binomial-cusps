@@ -1571,3 +1571,28 @@ x = n(p - 1/2) throughout.
    positive only where a tie point has broken the distance order, and peaks at the switch points.
    Over all of [0,1] it is largest near the ends (p ~ 0.03-0.06 and mirror, at n = 12, 25) and
    is 0 at p = 0, 1/2 and 1.
+
+### 2026-10-05 (Claude Code): the core moves to its own repo; OBD's slope data diagnosed
+- binom_core.py is now obd_core.py in its own public repository, ~/git/OBD-core
+  (github.com/dperlman/OBD-core, tag v0.1.0), with its history carried over.  This repo installs
+  it editable into .venv and no longer contains it; every import was renamed.  Entries before
+  this date say binom_core -- same code.  Validated: cusps_fast.py through the installed module
+  reproduces cusps/nNNNNN.csv byte for byte for every n = 3..600 and for n = 1000, 2000.
+  OBD-core's smoke tests: cusp counts at n = 3, 10, 50, 100, 1000; D > 0 at every tie point of
+  n = 50, 100, 300 (from ln f(i), not S_+ - S_-); the p=1/2 axis.
+- The 2026-09-21 flag on ~/git/OBD is CONFIRMED and the leading hypothesis was right.
+  OBDsaveSourceData.py takes slope_left/slope_right by one-sided finite differences of E with
+  eps = 0.1 x the gap to the nearest tie point (floor 1e-13, cap 1e-3).  On a concave piece each
+  secant is biased inward by ~|E''| eps/2, so the stored jump is ~D - |E''| eps and goes negative
+  wherever the true D is smaller.  Its 40-digit escalation uses the same stencil, so it removes
+  rounding but not this bias.  Measured against evaluate() on OBD's own shards (p* > 1/2):
+      n      stored D < 0    median |D error|   cusps missed   false "maximum"
+      50     31%             0.032              1 / 18         1
+      100    47%             0.024              1 / 34         1
+      300    67%             0.012              1 / 105        0
+      1000   80%             0.0065             3 / 352        12
+  Exact D is never negative, and no negative stored D is at a true cusp.  The missed cusps are
+  ones with E'_- just below 0 (e.g. n=1000 (528,560), D = 1.95), pushed positive by the bias.  The
+  "maximum" labels are impossible (fact 11).  The p=1/2 slopes read +/-22.71 at n=1000 against
+  +/-25.23.  OBD's E and tie p are fine (errors ~5e-12 and ~2e-13).  Fix: OBD to take slopes,
+  D (from ln f(i)) and certified cusp flags from obd_core and regenerate its shards and explorers.

@@ -18,7 +18,7 @@ import argparse, csv, glob, math, os
 from multiprocessing import Pool
 import numpy as np
 
-import binom_core as core
+import obd_core as core
 
 def load_per_n(out):
     with open(os.path.join(out, "star_per_n.csv")) as fh:

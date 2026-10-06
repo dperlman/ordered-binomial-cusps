@@ -20,12 +20,12 @@ Definitions
   F3      = (n+i-j)(i+j-2np*) + (j-np*)      (question (3) of the note)
 
 Method
-  The screening kernel, the certification and the descriptive values all live in binom_core.py,
+  The screening kernel, the certification and the descriptive values all live in obd_core.py,
   which is the single implementation shared with dump_ties.py.  For each tie point (i,j) the masses
   come from the recurrence f_{k+1} = f_k * rho * (n-k)/(k+1) outward from the mode, the ranks from a
   two-pointer merge of the increasing left run and the decreasing right run (unimodality), then S_-
   and S_+.  No sorting, O(n) per tie point, O(n) memory.  Masses below TINY are set to zero.
-  The masses are always normalised by their own sum; see binom_core.py for why.
+  The masses are always normalised by their own sum; see obd_core.py for why.
   A tie point is accepted in double precision if S_- < -MARGIN and S_+ > MARGIN (or rejected if
   clearly the other way).  It is instead re-certified with 50/100/200-digit interval arithmetic
   (mpmath.iv) if it is within MARGIN of a decision boundary, or if two adjacent masses in the
@@ -49,8 +49,8 @@ History
 import argparse, os, sys, time, glob
 from multiprocessing import Pool, cpu_count
 
-import binom_core as core
-from binom_core import MARGIN, GAP, TINY, TAG_MIN
+import obd_core as core
+from obd_core import MARGIN, GAP, TINY, TAG_MIN
 
 HEADER = "n,i,j,pstar,E,F3,F3_sign,S_minus,S_plus,slope_left,slope_right,certified_by\n"
 
@@ -58,7 +58,7 @@ def screen_n(n, sharp=True):
     """[(i,j,'MIN'|'CHECK')] for every tie point of n that is not decided NOT in double precision.
 
     sharp=True (the default) uses the re-ranking cluster bound instead of the GAP near-tie proxy
-    (binom_core); it leaves every verdict unchanged and removes almost all of the interval
+    (obd_core); it leaves every verdict unchanged and removes almost all of the interval
     arithmetic.  --legacy-trigger puts the old proxy back, for reproducing pre-2026-09-21 runs.
     """
     r = core.screen(n, collect_all=False, sharp=sharp)

@@ -14,7 +14,7 @@ Writes analysis/first_tie_vs_cusp.csv, one row per n.
 import argparse, csv, os
 import numpy as np
 from numba import njit
-from binom_core import lnC_arr
+from obd_core import lnC_arr
 
 @njit(cache=True)
 def _two_lowest(n, lnC):

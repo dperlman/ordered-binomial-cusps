@@ -67,6 +67,7 @@ tables are not published: they are gigabytes, and the code regenerates them in a
 ```bash
 python3 -m venv .venv                       # use a native arm64 Python on Apple Silicon
 .venv/bin/pip install numpy mpmath numba pyarrow matplotlib scipy
+.venv/bin/pip install "obd-core @ git+https://github.com/dperlman/OBD-core.git@v0.1.0"
 
 .venv/bin/python cusps_fast.py --nmax 1000 --workers 8 --out cusps/   # certified cusp tables
 .venv/bin/python cusps_fast.py --merge --out cusps/
@@ -85,7 +86,7 @@ python3 -m venv .venv                       # use a native arm64 Python on Apple
 |---|---|
 | [`RESEARCH_LOG.md`](RESEARCH_LOG.md) | **the substance** — definitions, proved facts, numerical results, proof approaches (including the failed ones), open questions, and a dated log of every run |
 | [`README_cusps.md`](README_cusps.md) | how to run the pipeline, timings, output columns |
-| [`binom_core.py`](binom_core.py) | the only implementation of the mathematics; everything else imports it |
+| [`obd_core`](https://github.com/dperlman/OBD-core) | the only implementation of the mathematics, in its own repository [OBD-core](https://github.com/dperlman/OBD-core); everything else imports it |
 | [`cusps_fast.py`](cusps_fast.py) | certified generator (numba screen + interval arithmetic) |
 | [`dump_ties.py`](dump_ties.py) | Parquet export of every tie point |
 | [`cusps_data.py`](cusps_data.py) | reader; derives the slope decomposition, gaps and indicators |

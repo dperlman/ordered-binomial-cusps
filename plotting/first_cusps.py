@@ -17,7 +17,7 @@ values of n would read as a trend they cannot support.
 import argparse, csv, os, sys
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import binom_core as core
+import obd_core as core
 
 COL = ["#2b5d8a", "#e08b2d", "#1b7a4b", "#8a4fbf", "#c1272d"]
 

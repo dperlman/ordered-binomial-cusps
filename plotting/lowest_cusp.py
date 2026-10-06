@@ -26,7 +26,7 @@ from matplotlib.lines import Line2D
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _style as st
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import binom_core as core
+import obd_core as core
 
 EVEN_C, ODD_C = "#1f6fb4", "#d1495b"
 

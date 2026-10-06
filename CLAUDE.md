@@ -38,9 +38,13 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   so no binomial coefficients (they were ~n-digit integers costing 72% of the routine at n=4000).
   Cost went from ~n^1.53 to ~n^1.05; verified identical verdict AND identical precision route on all
   34,789 logged checks.  S_+ = S_- + (j-i) exactly in these units.
-- binom_core.py is the ONLY implementation of the mathematics: constants (MARGIN/GAP/TINY), lnC,
+- obd_core is the ONLY implementation of the mathematics: constants (MARGIN/GAP/TINY), lnC,
   E_half, E_at (E at any p), the numba screening kernel (tie_kernel/screen), certify()/certify_escalating(),
-  evaluate(), recheck().  Every other script imports it.  Do not re-derive any of this elsewhere --
+  evaluate(), recheck().  Every other script imports it.  Since 2026-10-05 it is its OWN repository,
+  ~/git/OBD-core (github.com/dperlman/OBD-core, public), installed editable into .venv; until then it
+  was obd_core.py in this repo, which is the name the RESEARCH_LOG uses before that date.  The OBD
+  repo (~/git/OBD) imports it too, so its API is a contract: change it in OBD-core, run its tests
+  (pytest there), and tag a release when OBD should pick the change up.  Do not re-derive any of this elsewhere --
   before this existed the mass recurrence, the rank merge, the F3 formula and E_half were each
   written twice, and the two E_half versions had already drifted apart (500x different error at
   n=2000).  numpy + numba + mpmath only, so the certified numerics stay auditable.
@@ -73,10 +77,10 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   over every tie point of each N.
 - One CSV per n in cusps/; cusps/cusps_all.csv after merge; interval_checks.log lists every
   tie point that needed interval arithmetic and its verdict.
-- dump_ties.py (binom_core + pyarrow): builds the Parquet plotting datasets for a given n --
+- dump_ties.py (obd_core + pyarrow): builds the Parquet plotting datasets for a given n --
   data/ties/n=NNNNN/ (every tie point) and data/cusps/n=NNNNN/ (cusp subset).  Run
   .venv/bin/python dump_ties.py --n 100 --data data/ [--verify] [--workers 8].  It CERTIFIES IN
-  PLACE using binom_core.certify, and records decided_by per row.  --workers splits the i-loop into
+  PLACE using obd_core.certify, and records decided_by per row.  --workers splits the i-loop into
   work-balanced chunks and distributes the certifications; output is identical however it is cut
   (verified byte-for-byte at n=2000).  n=5000 takes 92 s this way.  It does not look is_cusp up in
   cusps_all.csv: a lookup silently marks every tie point as a non-cusp for any n the CSV does not
@@ -127,7 +131,7 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   when more specificity is needed (it is the upper envelope of the certificates W_c).  Not
   "witness".  Code lives here; PNGs go to lower_bound_proof_plots/ (gitignored) -- keep code and
   plots in separate folders.  _data.py is the shared E/L grid (exact kinks: uniform + every tie
-  point and switch point), built only from binom_core and star_check.  L_small_n.py: E, L and
+  point and switch point), built only from obd_core and star_check.  L_small_n.py: E, L and
   every W_c at one small n, plus the slack E - L.  L_scaled.py: n^1.5 scaling (troughs onto
   2 sqrt(2/pi) x^2) with trough close-ups in u = n(x - x_m).  L_arches.py: sqrt(n) scaling, where
   E and L converge to the arch chain A(x) (RESEARCH_LOG 2026-10-03), and the next order.
@@ -167,7 +171,8 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   arithmetic for borderline cases).  Descriptive columns (E, F3, slopes) are double precision.
 - Validated: n<=200 reproduces an independent 50-digit run exactly.
 - Environment: .venv (Python 3.13 arm64, built from the miniconda obd env) with numpy, mpmath,
-  numba.  Use .venv/bin/python.  numba caches compiled code in __pycache__; if the module is ever
+  numba and obd-core (.venv/bin/pip install -e ~/git/OBD-core).  Use .venv/bin/python.  numba caches
+  obd_core's compiled code in ~/git/OBD-core/__pycache__, shared with the obd env; if the module is ever
   imported under a synthetic name (importlib spec_from_file_location), delete the .nbi/.nbc files
   afterwards or the next normal run fails with "No module named '<dynamic>'".
 

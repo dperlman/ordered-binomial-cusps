@@ -2,7 +2,7 @@
 
 Shows, for a given (n,i,j), what the sharpened CHECK trigger sees: the masses in RANK order
 (increasing), the relative gap between each pair of neighbours, the resolution threshold from
-binom_core._err_bounds, and which adjacencies double precision cannot resolve.  Maximal runs of
+obd_core._err_bounds, and which adjacencies double precision cannot resolve.  Maximal runs of
 unresolvable neighbours are the "clusters"; within a cluster of size c any rank can move by c-1,
 so the cluster contributes (c-1)*sum_{k in C} f_k|k - n p*| to the bound that is added to MARGIN.
 
@@ -12,7 +12,7 @@ Run: .venv/bin/python inspect_tie.py 2590 791 2243
 import argparse
 from math import log
 import numpy as np
-import binom_core as core
+import obd_core as core
 
 def dissect(n, i, j):
     lnC = core.lnC_arr(n)

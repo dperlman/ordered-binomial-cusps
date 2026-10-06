@@ -1,7 +1,7 @@
 """plotting/lower_bound/_data.py -- E and L near p = 1/2 on an exact-kink grid, shared by the plots here.
 
 L(p) = n + 1/2 - 2 D(p) is the certificate envelope of the (★) reduction (RESEARCH_LOG section 4 and
-the 2026-09-24 claude.ai entry).  Nothing is derived here: E from binom_core.E_at / E_half, D from
+the 2026-09-24 claude.ai entry).  Nothing is derived here: E from obd_core.E_at / E_half, D from
 star_check.D_direct, D(1/2) from star_check.D_half_exact, switch points from star_check.switch_points,
 cusps from cusps/nNNNNN.csv.  The grid in x = n(p - 1/2) is uniform plus every tie point and switch
 point in (0, xmax], plus optional dense windows of half-width `local`/n around each switch point, so
@@ -13,7 +13,7 @@ import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
-import binom_core as core
+import obd_core as core
 from star_check import switch_points, D_direct, D_half_exact
 
 OUT = os.path.join(ROOT, "lower_bound_proof_plots")

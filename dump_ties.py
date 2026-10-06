@@ -9,7 +9,7 @@ Writes, per n:
     <data>/cusps/n=NNNNN/part.parquet    the cusp subset, plus cusp-to-cusp distance columns
     <data>/manifest.csv                  one line per built partition
 
-The mathematics is binom_core.py -- the same kernel and the same certify() the certified generator
+The mathematics is obd_core.py -- the same kernel and the same certify() the certified generator
 uses.  Certification is redone HERE rather than looked up: a lookup silently mislabels every tie
 point as a non-cusp for any n the CSV table does not cover (e.g. n=3000 today), which looks like a
 result instead of an error.  Re-certifying costs only the CHECK-tagged tie points, 4-86 per n
@@ -42,14 +42,14 @@ Stored columns (float64 unless noted; see cusps_data.py for everything derived f
   cusps only, additionally:
     cusp_gap_prev/next, cusp_intervening_prev/next, nb_i, nb_j (nearest cusp by |p*| difference)
 
-Masses are normalised by their own sum before E is accumulated; see binom_core.py for why.
+Masses are normalised by their own sum before E is accumulated; see obd_core.py for why.
 """
 import argparse, csv, os, time
 from multiprocessing import Pool
 import numpy as np
 
-import binom_core as core
-from binom_core import TAG_CHECK, TAG_MIN
+import obd_core as core
+from obd_core import TAG_CHECK, TAG_MIN
 
 SCHEMA_VERSION = 3
 
@@ -72,7 +72,7 @@ def build(n, data, force=False, verify=None, workers=1, pool=None):
     for k in ('tag_alt', 'rbnd'): r.pop(k, None)   # trigger diagnostics; not part of the dataset
     o = np.argsort(r['pstar'], kind='stable')
     r = {k: v[o] for k, v in r.items()}
-    # prepend the symmetry axis p=1/2 (see binom_core.axis_point)
+    # prepend the symmetry axis p=1/2 (see obd_core.axis_point)
     aSm, aSp, aE, akap, apairs = core.axis_point(n)
     axis = dict(i=0, j=n, pstar=0.5, ln_fi=np.log(akap/n), E=aE, S_minus=aSm,
                 F3=np.nan, tag=(TAG_MIN if aSm < 0 < aSp else 0))

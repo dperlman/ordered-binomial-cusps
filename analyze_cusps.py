@@ -15,7 +15,7 @@ import numpy as np
 from math import lgamma
 from collections import defaultdict
 
-from binom_core import lnC_arr, E_half as _E_half     # single implementation, see binom_core.py
+from obd_core import lnC_arr, E_half as _E_half     # single implementation, see obd_core.py
 
 def tie_points(n, lnC):
     """all (p*, i, j) with 0<=i<j<=n, i+j>n, sorted by p*
@@ -29,7 +29,7 @@ def tie_points(n, lnC):
     o = np.argsort(p, kind='stable'); return p[o], i[o], j[o]
 
 def E_half(n, lnC=None):
-    """E(n,1/2) from binom_core (normalised masses).  lnC is accepted and ignored, for callers
+    """E(n,1/2) from obd_core (normalised masses).  lnC is accepted and ignored, for callers
     that still pass it."""
     return _E_half(n)
 

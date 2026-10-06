@@ -5,11 +5,11 @@ above 1/2 and at two fixed p.
 
 Plotted: (E(n,p) - E(n,1/2))/n, log y, for n = 2..nmax, at
   first tie point    smallest p* > 1/2  (exhaustive pair scan, first_tie_vs_cusp._two_lowest;
-                     E from binom_core.evaluate; from n=2)
+                     E from obd_core.evaluate; from n=2)
   first cusp         smallest-p* cusp   (cusps/cusps_all.csv; from n=3)
   second tie point   second-smallest p* (from n=3)
   second cusp        second-smallest-p* cusp (from n=6: n=3..5 have one cusp above 1/2)
-  p = 0.51, 0.61     binom_core.E_at
+  p = 0.51, 0.61     obd_core.E_at
 --series picks which tie/cusp series appear (tK = K-th tie point, cK = K-th cusp) and --p the
 fixed p values, e.g.
   --series c1,c2 --p 0.6,0.51,0.501 --tag _cusps
@@ -30,7 +30,7 @@ from matplotlib.lines import Line2D
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _style as st
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import binom_core as core
+import obd_core as core
 from first_tie_vs_cusp import lowest_k
 
 def cusps_by_n(path, nmax):

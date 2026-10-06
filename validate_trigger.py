@@ -1,4 +1,4 @@
-"""validate_trigger.py -- regression test for the sharpened CHECK trigger (binom_core).
+"""validate_trigger.py -- regression test for the sharpened CHECK trigger (obd_core).
 
 Two directions, both needed:
 
@@ -17,7 +17,7 @@ Run: .venv/bin/python validate_trigger.py --logged
 """
 import argparse, collections, sys
 import numpy as np
-import binom_core as core
+import obd_core as core
 
 C, MIN = core.TAG_CHECK, core.TAG_MIN
 
