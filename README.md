@@ -30,7 +30,7 @@ quantities that can sit `1e-7` from zero while the masses involved span 300 orde
 
 | | |
 |---|---|
-| **[OBDExplorer](https://github.com/dperlman/OBDExplorer)** | Interactive exploration — 2D/3D/4D plots, live views of the structure. Go there to *look at* the distribution and develop intuition. |
+| **[OBDExplorer](https://github.com/dperlman/OBDExplorer)** | Interactive exploration — 2D/3D/4D plots, live views of the structure. Go there to *look at* the distribution and develop intuition; the [live demos](https://dperlman.github.io/OBDExplorer/) run in the browser. |
 | **this repo** | Optimised, certified tools for *producing the raw data* those explorations rest on, plus the datasets themselves. |
 
 ## What is certified, and what that means
