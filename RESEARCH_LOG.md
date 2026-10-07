@@ -1604,3 +1604,22 @@ x = n(p - 1/2) throughout.
   cusp.  Over every adjacent pair of n=2..400 it is the only exact zero.  OBD regenerated n=2..1000: cusp
   sets identical to cusps/nNNNNN.csv for every n=3..1000, no negative D, nothing unresolved.
   dump_ties.py now builds on tie_table too (byte-identical Parquet).
+
+### 2026-10-06 (Claude Code): a kernel bug -- _one_tie read an unwritten buffer entry (verdicts unaffected)
+- Found while moving OBD's tie data to Parquet: OBD's 2026-10-05 tables had one wrong row, n=978 pair
+  (1,978), with E = 492 (true 953.54) and slopes +/-958,972 (true +/-2.81).  Re-running gave the right
+  values, so the error depended on memory, not on the inputs.
+- Cause.  The mass window [lo,hi] is forced to reach i and j only when the pair is at or above TINY
+  (pair_in).  For a pair below TINY with a lopsided window, i can fall outside while j falls inside
+  (here i=1, window [2,978]).  The exact-tie step f[j] = f[i] then copied a buffer entry never written
+  for this tie point -- whatever the reused scratch buffer last held -- into the window, and it
+  entered E and S_-.  Filling the buffer with 1e300 before the call reproduces OBD's numbers to every
+  digit.  Fixed in OBD-core v0.3.2: in that case f[j] = 0 (the pair is below TINY, so numerically 0).
+- Impact on results: NONE on any verdict.  Such a pair has kappa = (j-i) f(i) below ~1e-287, so
+  S_+ = S_- to double precision and S_- < 0 < S_+ cannot hold; the trap can neither create nor hide a
+  cusp, and certify() recomputes from scratch anyway.  Only descriptive E and S_- of trap rows could
+  be wrong.  The condition holds at 16 tie points for n <= 1000, then grows: ~259 at n=2000, ~1290 at
+  n=5000, ~2121 at n=8000 (of 6.25M / 16M tie points).
+- Checked: every trap row of this repo's Parquet dumps (data/ties, n=1000..8000, 8,708 rows) matches
+  the fixed kernel to 1e-9 -- the leftover there was a harmless 0.  cusps_fast output and ten dump_ties
+  partitions are byte-identical before and after the fix.  The cusp tables cannot contain trap rows.
