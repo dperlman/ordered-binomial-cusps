@@ -4,7 +4,8 @@ the BAND (i+j-n) of the pair that holds that rank at that n.
     .venv/bin/python plotting/parity_by_band.py [--rank 100] [--nmin 20] [--nmax 400]
 
 Top:    y(n) = (E(n,p*) - E(n,1/2))/n at the rank-K tie point above 1/2 (log y).
-Bottom: alpha(n) = ((-1)^n/2)[ln y(n) - (ln y(n-1) + ln y(n+1))/2], with NO points left out --
+Bottom: the band itself as a staircase, so higher and lower bands read directly.
+Middle: alpha(n) = ((-1)^n/2)[ln y(n) - (ln y(n-1) + ln y(n+1))/2], with NO points left out --
         at a band switch it measures the jump, which is part of what is being shown.
 A band-b pair has width n+b-2i, so its width parity is the parity of n+b: within one band, even and
 odd n always get pairs of opposite width parity (the period-2 lock).  Which parity comes out higher
@@ -45,14 +46,15 @@ def main():
     x, y, band, al = x[m], y[m], band[m], al[m]
     col = np.array([BAND_COL.get(int(b), OTHER) for b in band])
 
-    g = st.NGrid(int(x[0]), int(x[-1]), height=a.height, nrows=2, gap=200)
-    top, bot = g.axes
+    g = st.NGrid(int(x[0]), int(x[-1]), height=a.height, nrows=3, gap=170)
+    top, bot, bnd = g.axes
+    bnd.set_ylim(0.4, band.max() + 0.6)
     top.set_yscale("log"); top.set_ylim(y.min()/1.5, y.max()*1.5)
     ok = np.isfinite(al)
     lo, hi = al[ok].min(), al[ok].max(); pad = 0.06*(hi - lo)
     bot.set_ylim(lo - pad, hi + pad)
     sc = min(1.0, max(0.3, g.k/60)); d = max(7, round(40*sc)); lw = max(1.6, 5*sc)
-    for panel in (0, 1):                                  # background: each n's column in its band tint
+    for panel in (0, 1, 2):                               # background: each n's column in its band tint
         for c in np.unique(col):
             g.column_fill(x[col == c], c, panel=panel, alpha=0.16)
     for panel, v in ((0, y), (1, al)):
@@ -62,15 +64,24 @@ def main():
         for c in np.unique(col):
             q = (col == c) & np.isfinite(v)
             g.marks(x[q], v[q], c, d, "plus", lw=lw, panel=panel)
+    # the band itself as a staircase: steps at n +- 1/2, i.e. exactly on the column edges
+    g.back[2].plot(x, band, drawstyle="steps-mid", color="0.35", lw=2.2, zorder=2)
+    for c in np.unique(col):
+        q = col == c
+        g.marks(x[q], band[q].astype(float), c, max(6, round(d*0.6)), "disc", panel=2)
 
-    b0, b1 = g.back
+    b0, b1, b2 = g.back
     b0.set_title(f"Tie point #{a.rank} above $\\frac{{1}}{{2}}$, coloured by the band $i+j-n$ of its pair",
                  fontsize=42, pad=28)
     b0.set_ylabel("$(E - E(\\frac{1}{2}))\\,/\\,n$", fontsize=34, labelpad=18)
     b1.set_title("even/odd offset  $\\alpha(n) = \\frac{(-1)^n}{2}\\,[\\,\\ln y_n - \\frac{1}{2}"
                  "(\\ln y_{n-1} + \\ln y_{n+1})\\,]$,  no points left out", fontsize=36, pad=20)
     b1.set_ylabel("$\\alpha$   (> 0: even $n$ higher)", fontsize=32, labelpad=18)
-    b1.set_xlabel("$n$", fontsize=38, labelpad=18)
+    b2.set_title("the band $i+j-n$ of the pair holding that rank", fontsize=36, pad=20)
+    b2.set_ylabel("band", fontsize=32, labelpad=18)
+    b2.set_xlabel("$n$", fontsize=38, labelpad=18)
+    from matplotlib.ticker import MaxNLocator
+    b2.yaxis.set_major_locator(MaxNLocator(integer=True))
     from matplotlib.ticker import MultipleLocator
     span = x[-1] - x[0]
     major, minor = ((10, 1) if span <= 150 else (50, 10) if span <= 600 else

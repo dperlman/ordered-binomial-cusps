@@ -144,6 +144,9 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   every W_c at one small n, plus the slack E - L.  L_scaled.py: n^1.5 scaling (troughs onto
   2 sqrt(2/pi) x^2) with trough close-ups in u = n(x - x_m).  L_arches.py: sqrt(n) scaling, where
   E and L converge to the arch chain A(x) (RESEARCH_LOG 2026-10-03), and the next order.
+  phantom_deficit.py: what the phantom deficit is -- the formula a_c as a tent over the whole integer
+  line vs the plain ranks sigma_c, the deficit ramp max(0, t - k) weighted by f_p, and Delta along p
+  against L's margin (n = 8, 20, 50).
   L_glossary.py: explanatory figure -- n = 12 close up above 1/2 with every term labelled
   (certificate, active certificate, L, switch point, slack, margin, tie point, cusp) and a
   glossary panel; label positions are hand-tuned for n = 12.  This plotting thread is
