@@ -171,12 +171,13 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   arithmetic for borderline cases).  Descriptive columns (E, F3, slopes) are double precision.
 - Validated: n<=200 reproduces an independent 50-digit run exactly.
 - Environment: .venv (Python 3.13 arm64, built from the miniconda obd env) with numpy, mpmath,
-  numba and obd-core (.venv/bin/pip install -e ~/git/OBD-core).  Use .venv/bin/python.  numba caches
-  obd_core's compiled code in ~/git/OBD-core/__pycache__.  Keep this .venv the ONLY editable install:
-  numba stamps each cache index with its own version and treats another version's index as empty,
-  so two environments with different numba sharing that directory overwrite each other's cache
-  (the obd env therefore installs a pinned release, whose cache lives in its site-packages).
-  If the module is ever
+  numba and obd-core (.venv/bin/pip install -c ~/git/OBD-core/constraints.txt -e ~/git/OBD-core).
+  Use .venv/bin/python.  The numerical stack is PINNED by OBD-core (obd_core.NUMERIC_PINS ->
+  constraints.txt; since 2026-10-06 numpy 2.3.5, numba 0.63.1, llvmlite 0.46.0, mpmath 1.4.0, the
+  versions of the obd conda env): install anything here with -c that constraints.txt, so this repo
+  and OBD compute bit-identical results.  import obd_core warns if the environment drifts.  numba
+  caches obd_core's compiled code in ~/git/OBD-core/__pycache__; the cache is per numba version,
+  which is the other reason the versions must match.  If the module is ever
   imported under a synthetic name (importlib spec_from_file_location), delete the .nbi/.nbc files
   afterwards or the next normal run fails with "No module named '<dynamic>'".
 
