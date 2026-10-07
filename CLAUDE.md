@@ -172,7 +172,11 @@ in step with the log: when a result is locked in or corrected, update both.  No 
 - Validated: n<=200 reproduces an independent 50-digit run exactly.
 - Environment: .venv (Python 3.13 arm64, built from the miniconda obd env) with numpy, mpmath,
   numba and obd-core (.venv/bin/pip install -e ~/git/OBD-core).  Use .venv/bin/python.  numba caches
-  obd_core's compiled code in ~/git/OBD-core/__pycache__, shared with the obd env; if the module is ever
+  obd_core's compiled code in ~/git/OBD-core/__pycache__.  Keep this .venv the ONLY editable install:
+  numba stamps each cache index with its own version and treats another version's index as empty,
+  so two environments with different numba sharing that directory overwrite each other's cache
+  (the obd env therefore installs a pinned release, whose cache lives in its site-packages).
+  If the module is ever
   imported under a synthetic name (importlib spec_from_file_location), delete the .nbi/.nbc files
   afterwards or the next normal run fails with "No module named '<dynamic>'".
 
