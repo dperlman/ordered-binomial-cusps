@@ -44,10 +44,18 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   ~/git/OBD-core (github.com/dperlman/OBD-core, public), installed editable into .venv; until then it
   was binom_core.py in this repo, which is the name the RESEARCH_LOG uses before that date.  The OBD
   repo (~/git/OBD) imports it too, so its API is a contract: change it in OBD-core, run its tests
-  (pytest there), and tag a release when OBD should pick the change up.  Do not re-derive any of this elsewhere --
+  (pytest there), and tag a release when OBD should pick the change up.  OBD-core's README.md is the
+  usage guide (both APIs, what is certified, pitfalls) and its CLAUDE.md the rules for changing it
+  -- read them before editing the core.  Do not re-derive any of this elsewhere --
   before this existed the mass recurrence, the rank merge, the F3 formula and E_half were each
   written twice, and the two E_half versions had already drifted apart (500x different error at
   n=2000).  numpy + numba + mpmath only, so the certified numerics stay auditable.
+- obd_core.reference (since 2026-10-07, OBD-core v0.4.0): an INDEPENDENT rigorous implementation
+  for checking -- exact rationals when p is rational, interval arithmetic otherwise, precision
+  raised until every ranking and sign is proved.  ref.tie(n, i, j) gives every quantity at one tie
+  point as an enclosure; ref.compare_tie / ref.check_tie_table measure double results against it;
+  ref.expected_double_error(n) says how close they should be.  Use it to check a suspicious value
+  or new code instead of writing another ad-hoc high-precision script.  Too slow for tables.
 - _one_tie() is the single place masses and ranks are computed; tie_kernel loops it and evaluate()
   calls it once.  Masses are ALWAYS normalised by their own sum (see RESEARCH_LOG section 7, data architecture): E then
   matches a 60-digit computation to ~2e-13, and E - E(1/2) carries ~7.4 digits at n=2000 instead of
@@ -59,7 +67,8 @@ in step with the log: when a result is locked in or corrected, update both.  No 
 - cusps_fast.py: the certified generator (CLI, parallel driver, per-n CSV, merge, recheck).  Parallel, resumable generator of all cusp points up to
   --nmax; its docstring holds the definitions, method, column list and history.
   Run: python cusps_fast.py --nmax 2000 --workers 8 --out cusps/  then  --merge --out cusps/.
-  Merge options: --split-mb, --merge-nmin/--merge-nmax, --slim.  --recheck n i j gives 50-digit values.
+  Merge options: --split-mb, --merge-nmin/--merge-nmax, --slim.  --recheck n i j prints every value at
+  that tie point from obd_core.reference (rigorous enclosures; --dps is the starting precision).
 - numba screening kernel (recurrence for the masses, two-pointer merge for ranks, O(n) per tie
   point); masses below TINY=1e-290 are treated as zero, which keeps the interval-arithmetic
   workload at 4-86 checks per n (mean 33) for n=1001..2000.
