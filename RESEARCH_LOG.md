@@ -63,6 +63,15 @@ established in that conversation; "verified" means checked numerically with the 
     Consequence for the pipeline: nothing to add.  There is no anti-cusp to search for, no new
     column or file, and the certification criterion S_- < 0 < S_+ already captures every extremum
     that can sit at a tie point.
+12. PROVED (2026-10-08, one line): a tie point is the logit-mean of the grid fractions it spans.
+    C(n,i)/C(n,j) = prod_{t=i+1}^{j} t/(n+1-t) and t/(n+1-t) = x_t/(1-x_t) with x_t = t/(n+1), so
+        logit p* = (1/(j-i)) sum_{t=i+1}^{j} logit(x_t).
+    Fact 1 is the immediate corollary (a mean lies between its extremes).  When every x_t is above
+    1/2, where logit is convex, Jensen puts p* ABOVE the arithmetic mean, the grid point
+    (i+j+1)/(2(n+1)).  (When the x_t straddle 1/2 Jensen alone does not fix the sign; for cusps
+    it is still >= 0 in every case, see the entry.)  To second order the offset is
+        2(n+1)(p* - (i+j+1)/(2(n+1))) = (2x-1)/(x(1-x)) (m^2-1)/(12(n+1)),  x = the grid point, m = j-i,
+    in units of the grid step 1/(2(n+1)).  Consequences for cusps: 2026-10-08 entry in section 8.
 
 ## 3. Numerical results on cusp points
 
@@ -152,6 +161,11 @@ PROMISING (the main reduction):
   maxima of E, neither of which is proved.
 - Quantify cusp "depth" (dip height before the nearest smooth max) for all cusps; conjecture:
   negative-F3 cusps are the shallowest.
+- (2026-10-08) Cusps sit a small, one-sided offset above the fractions k/(2(n+1)) (fact 12), so
+  every cusp keeps out of the Farey gaps around simple fractions a/b until n ~ 1/(b r).  The
+  offset is bounded only through the cusp width j-i ~ sqrt(n), i.e. through the unproved pair-mass
+  floor.  A proved bound on the width of a cusp pair would make the gaps rigorous, and may say
+  something about the last cusp (S5: max p* flat at 0.6517-0.6525).
 - Prove piecewise concavity of E (fact 7 above is numerical).
 - Prove that the first tie point above 1/2 is the innermost pair (fact 5 is numerical for n<=200).
 
@@ -169,6 +183,8 @@ PROMISING (the main reduction):
   negF3_neighbors.csv are at the top level.
 - star_check.py (numpy + scipy + mpmath): exhaustive switch-point check of (★), parallel per n;
   --validate, --mp-check, --lemma-check.  star_analyze.py: its analyses.  See the 2026-09-24 entries.
+- farey_cusps.py (numpy + pyarrow): fact 12 and the Farey structure of the cusp positions, every
+  number in the 2026-10-08 entry, from cusps/cusps_all.csv alone (about a minute).
 - Original question sheet: 3QuestsClaude.pdf (page 21 of a larger note).
 
 ## 7. Data architecture (plotting datasets)
@@ -1623,3 +1639,63 @@ x = n(p - 1/2) throughout.
 - Checked: every trap row of this repo's Parquet dumps (data/ties, n=1000..8000, 8,708 rows) matches
   the fixed kernel to 1e-9 -- the leftover there was a harmless 0.  cusps_fast output and ten dump_ties
   partitions are byte-identical before and after the fix.  The cusp tables cannot contain trap rows.
+
+### 2026-10-08 (Claude Code): cusps sit just above the fractions k/(2(n+1)) -- Farey gaps in the cusp positions
+Origin: OBD's "first cusp within r" plots (OBD docs/plots/N-pFirstCuspWithinR*.png).  FCW_r(p) is
+the smallest n with a cusp p* within r of p.  Over most of the band it looks random, but it spikes
+sharply at simple fractions (3/5, 5/8, 4/7, 7/12, 9/16, ...), and the user recognised the pattern
+as the one around rationals.  It is: the cusps are, to within a small one-sided offset, fractions
+with denominator 2(n+1), and the spikes are Farey gaps.  All numbers below: farey_cusps.py, over
+cusps/cusps_all.csv (n = 3..5000; FCW also uses the mirrors 1-p* and the axis cusp p = 1/2 for
+every n >= 2, as OBD does).  Everything except fact 12 is NUMERICAL.
+- FACT 12 (section 2, proved): logit p* = mean of logit(t/(n+1)) over t = i+1..j.  Checked on
+  20,000 random cusps: worst difference 9.6e-13.  So p* = the grid point (i+j+1)/(2(n+1)) plus a
+  Jensen offset, second order (2x-1)/(x(1-x)) (m^2-1)/(12(n+1)) grid steps (step 1/(2(n+1)),
+  m = j-i).
+- THE OFFSET IS SMALL AND ONE-SIDED FOR CUSPS.  It is >= 0 for every cusp up to rounding: the
+  only negative values (671 cusps, 0.015% of n >= 100) are width-1 pairs, which sit exactly on
+  the grid (p* = (i+1)/(n+1)), off by 2e-9..1.6e-8 steps in the stored double p*.  That includes
+  the 265,080 cusps (6%) whose x_t reach below 1/2 (down to 0.3), where Jensen does not apply.  The second-order form matches the exact
+  offset to a median relative error of 0.01% (99th percentile 0.18%).  Because a cusp needs a
+  non-negligible pair mass (the 2026-09-21 floor), cusp widths are ~sqrt(n): m/sqrt(n) median 0.78,
+  99% 3.01, max 5.50.  So the offset, ~ m^2/n, does not grow with n: median 0.025 grid steps, 90%
+  0.033, 99% 0.775, max 2.02.  It is zero at p = 1/2 and grows toward the band's top (factor
+  (2x-1)/(x(1-x))).  Fact 5's first tie point above 1/2 is the extreme case: (n+2)/(2n+2) exactly
+  on the grid for n even.
+- FAREY GAPS.  Around a/b (lowest terms) every grid fraction k/(2(n+1)) other than a/b itself is
+  at least 1/b grid steps away (|kb - 2a(n+1)| >= 1), and at least 2/b for even b (then kb -
+  2a(n+1) is even).  Cusps inherit the gap up to their offset, so p within r of a/b waits until
+  that gap, ~1/(b n) in p, falls below ~r: FCW ~ c/(b r).  Seen in the data:
+    * FCW at the spike tops grows like 1/r, not like the bulk's 1/sqrt(r): at 3/5, FCW*r ~ 0.04
+      at r = 1e-3, 1e-4, 1e-5 (OBD's FCW*r plot lines the spike tops up across r).
+    * Spike height (max FCW within 3e-4 left of a/b, over the local median, r = 1e-5) follows the
+      gap: corr(log height, log gap) = 0.88, better than against 1/b alone (0.79) -- even
+      denominators (11/20, 13/24, 19/30) spike like denominators half their size.  Median height
+      14.8x for b = 5..10, 6.8x for 11..20, 3.7x for 21..28, 2.7x (noise level) for 29..40: the
+      gaps narrower than the typical offset are blurred out.
+    * The edge at p = 1/2 is the b = 2 case with zero offset: the first cusp above 1/2 sits on
+      the grid point 1/2 + 1/(2(n+1)) (P12), so FCW there is a formula, ~1/(4r) right above 1/2.
+- THE SPIKES ARE LOPSIDED, AND THE OFFSET SAYS WHY.  Right of a/b the gap is filled early by the
+  cusps whose grid point IS a/b, pushed just above it by their offset: for p from r to r + 2e-5
+  right of 3/5, 4/7, 5/8, 7/12, 9/16 the cusp that first comes within r = 1e-5 has grid point a/b
+  in 40/40 cases (median first n 227..538).  Left of a/b it never does (0/40): the first cusp
+  there always comes from the grid point below (40/40), and much later (median first n 1125..2804).
+  For odd b (3/5, 4/7) that is an ordinary cusp (offset ~0.03) once the one-step gap has shrunk;
+  for even b (5/8, 7/12, 9/16), where the gap is two steps, it is a WIDE pair, m ~ 3.2-4.1
+  sqrt(n), whose offset of 0.7-0.9 steps carries it up into the gap.  Median right/left height
+  ratio: 0.28 for b = 5..10, 0.50 for 11..20, 0.85 for 21..28, 0.94 for 29..40.
+- THE BULK IS NOT FAREY.  Away from simple fractions FCW behaves like cusps scattered at random
+  (~2.3 per unit p per n): median FCW*sqrt(r) = 0.538, 0.520, 0.528, 0.531 at r = 1e-3..1e-6.  A
+  model with a "cusp" at EVERY grid fraction k/(2(n+1)) reproduces the spikes but not the bulk
+  (median 0.64; pointwise correlation of log FCW with the real one only 0.1-0.2): which grid
+  points carry cusps, and their offsets, decide the bulk.  (The Poisson estimate for all
+  fractions of denominator <= 2n, (pi/2) sqrt(ln 2/6) = 0.534, matches the real median, but the
+  all-fractions model itself does not, so that agreement is a coincidence.)
+- Status: fact 12 is proved; the offset bound, and with it the Farey gaps for cusps, rest on the
+  unproved pair-mass floor (cusp widths ~ sqrt(n)).  Open question added to section 5.  FACTS.md
+  not updated yet.
+- Tools (OBD, 2026-10-07/08, for reference): OBD-core v0.6.0 added tie_table(n, p_range=...), which
+  computes only the tie points in p windows (bit-identical to the full table there; rule-3
+  byte check unchanged).  OBD's cusp-proximity plot uses it to carry FCW past the n <= 5000
+  tables: at r = 1e-6 out to n = 20,000 in 57 min, where 4,900 unreached p in 0.501..0.651 at
+  n = 5000 drop to 90 (the spike cores; 3/5 needs n ~ 19,900).
