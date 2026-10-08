@@ -25,6 +25,7 @@ computation over the stated range, by the named program.  Dates are when the res
 | P11 | **Fact C.** A reducing tie point satisfies min(width, band) ≤ j − (largest prime ≤ j).  In particular it can never have j prime.  Independently checked by a second model 2026-09-24. | 2026-09-23 | Log 2026-09-23, "FACT C written out" |
 | P12 | Band 1: C(n,i)/C(n,n+1−i) = (n+1−i)/i, so every band-1 tie point has (p\*/q\*)<sup>width</sup> = j/i, and p\* → ½ + 1/(2(n+1)). | 2026-09-23 | Log 2026-09-23 and 2026-09-24 |
 | P13 | Counting.  There are n(n+1)/2 tie points (pairs 0 ≤ i < j ≤ n) in (0,1): ⌊n²/4⌋ above ½, ⌊n²/4⌋ below ½ (mirror images), and ⌈n/2⌉ exactly at p = ½.  A pair has p\* = ½ if and only if i + j = n, so all ⌈n/2⌉ of those coincide there.  Cumulatively, Σ<sub>n=3..N</sub> ⌊n²/4⌋ = ⌊N(N+2)(2N−1)/24⌋ − 1.  The number of **distinct** p\* values in (0,1) is ⌊n²/2⌋ + 1 exactly when there are no other collisions — so for n ≤ 100,000 (S2). | 2026-09-24 | Log 2026-09-24, "tie-point counts" |
+| P14 | **Logit-mean.** logit p\* = (1/(j−i)) Σ<sub>t=i+1..j</sub> logit(t/(n+1)): a tie point is the mean, in log-odds, of the fractions t/(n+1) it spans (from C(n,i)/C(n,j) = Π t/(n+1−t)).  P2 follows.  When every t/(n+1) > ½, p\* lies above the grid point (i+j+1)/(2(n+1)) (Jensen), by (2x−1)/(x(1−x))·(m²−1)/(24(n+1)²) to second order (x the grid point, m = j−i). | 2026-10-08 | Log §2, fact 12; log 2026-10-08 |
 
 ## Screened computationally
 
