@@ -78,7 +78,7 @@ def build(n, data, force=False, verify=None, workers=1, pool=None):
                 decided_by=pa.array(decided.tolist()).dictionary_encode(),
                 gap_prev=pa.array(gap_prev), gap_next=pa.array(gap_next),
                 rank_in_n=pa.array(np.arange(c, dtype=np.int32)),
-                n_tied_pairs=pa.array(n_pairs))
+                n_tied_pairs=pa.array(n_pairs, pa.int16()))   # documented int16 (OBD-core returns int32)
     meta = {b'n': str(n).encode(), b'E_half': repr(Eh).encode(), b'n_ties': str(c).encode(),
             b'n_cusps': str(int(is_cusp.sum())).encode(), b'n_checked': str(len(checks)).encode(),
             b'n_unresolved': str(n_unres).encode(), b'normalised_masses': b'1',
