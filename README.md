@@ -66,9 +66,9 @@ tables are not published: they are gigabytes, and the code regenerates them in a
 
 ```bash
 python3 -m venv .venv                       # use a native arm64 Python on Apple Silicon
-C=https://raw.githubusercontent.com/dperlman/OBD-core/v0.4.0/constraints.txt   # pinned numpy/numba/llvmlite/mpmath
+C=https://raw.githubusercontent.com/dperlman/OBD-core/v0.6.0/constraints.txt   # pinned numpy/numba/llvmlite/mpmath
 .venv/bin/pip install -c $C numpy mpmath numba pyarrow matplotlib scipy
-.venv/bin/pip install -c $C "obd-core @ git+https://github.com/dperlman/OBD-core.git@v0.4.0"
+.venv/bin/pip install -c $C "obd-core @ git+https://github.com/dperlman/OBD-core.git@v0.6.0"
 
 .venv/bin/python cusps_fast.py --nmax 1000 --workers 8 --out cusps/   # certified cusp tables
 .venv/bin/python cusps_fast.py --merge --out cusps/
