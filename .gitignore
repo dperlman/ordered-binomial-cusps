@@ -35,5 +35,7 @@ simplex_figures/
 
 # --- run logs (never tracked; regenerate the run instead) ---
 *.log
+# exit-code markers written by the batch scripts in runs/
+*.done
 simplifying_n*.csv
 simplifying_n*_tier1.csv

@@ -92,6 +92,7 @@ C=https://raw.githubusercontent.com/dperlman/OBD-core/v0.4.0/constraints.txt   #
 | [`dump_ties.py`](dump_ties.py) | Parquet export of every tie point |
 | [`cusps_data.py`](cusps_data.py) | reader; derives the slope decomposition, gaps and indicators |
 | [`CLAUDE.md`](CLAUDE.md) | working conventions, including the data publication policy |
+| [`runs/`](runs/) | launch scripts of the long batch runs behind results in `FACTS.md` |
 
 Generated data is **not** committed — it is large and reproducible, and every ignored path has its
 rebuild command in [`.gitignore`](.gitignore).
