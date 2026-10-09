@@ -161,6 +161,11 @@ PROMISING (the main reduction):
   maxima of E, neither of which is proved.
 - Quantify cusp "depth" (dip height before the nearest smooth max) for all cusps; conjecture:
   negative-F3 cusps are the shallowest.
+- (2026-10-09) Explain the cusp curve: in pair space (grid position, width/sqrt(n)) the narrow
+  tie points of each column of fixed i+j go from E falling through them to E rising, exactly once,
+  and the cusps are the first one or two after the switch.  Why one switch, why the curve's
+  limit shape (width ~1.16 sqrt(n) at p = 1/2 down to 0 at p ~ 0.652, which would give S5), and
+  why the cusps off it (width >= 2.98 sqrt(n)) are exactly the F3 < 0 ones -- all NUMERICAL so far.
 - (2026-10-08) Cusps sit a small, one-sided offset above the fractions k/(2(n+1)) (fact 12), so
   every cusp keeps out of the Farey gaps around simple fractions a/b until n ~ 1/(b r).  The
   offset is bounded only through the cusp width j-i ~ sqrt(n), i.e. through the unproved pair-mass
@@ -183,6 +188,8 @@ PROMISING (the main reduction):
   negF3_neighbors.csv are at the top level.
 - star_check.py (numpy + scipy + mpmath): exhaustive switch-point check of (★), parallel per n;
   --validate, --mp-check, --lemma-check.  star_analyze.py: its analyses.  See the 2026-09-24 entries.
+- cusp_curve.py (numpy + pyarrow + obd_core): the cusp curve in pair space and F3 < 0 as the cusps
+  off it, every number in the 2026-10-09 entry (about 25 s).
 - farey_cusps.py (numpy + pyarrow): fact 12 and the Farey structure of the cusp positions, every
   number in the 2026-10-08 entry, from cusps/cusps_all.csv alone (about a minute).
 - Original question sheet: 3QuestsClaude.pdf (page 21 of a larger note).
@@ -1699,3 +1706,42 @@ every n >= 2, as OBD does).  Everything except fact 12 is NUMERICAL.
   byte check unchanged).  OBD's cusp-proximity plot uses it to carry FCW past the n <= 5000
   tables: at r = 1e-6 out to n = 20,000 in 57 min, where 4,900 unreached p in 0.501..0.651 at
   n = 5000 drop to 90 (the spike cores; 3/5 needs n ~ 19,900).
+\n
+### 2026-10-09 (Claude Code): the cusp curve in pair space; F3 < 0 is exactly "off the curve"
+Origin: OBD's pair-space map (OBD `pair-map --n N`, docs/plots/PairMap-n1000.png, -n4000.png).  Every
+tie point (i, j) of one n is drawn at its grid position x = (i+j+1)/(2(n+1)) (~ p*, fact 12) and
+scaled width w = (j-i)/sqrt(n), coloured by u = S_-/kappa: u <= -1 means E falls through the tie
+point (both one-sided slopes negative), u >= 0 that it rises, -1 < u < 0 a cusp.  The picture has a
+limit shape in these coordinates, and it organises the cusps.  All NUMERICAL, n <= 5000;
+cusp_curve.py reproduces every number below.
+- THE CUSP CURVE.  Below a curve w*(x) E falls through every narrow tie point; above it, E rises.
+  98-99% of the cusps of every n lie on that curve:
+      median w of the cusps with w < 2, at x =   0.505  0.550  0.600  0.630  0.645   last x
+        n = 1000                                  1.154  0.949  0.632  0.411  0.221   0.6518
+        n = 3000                                  1.150  0.949  0.639  0.402  0.219   0.6521
+        n = 5000                                  1.160  0.948  0.651  0.410  0.226   0.6521
+  the same to about 0.01 for n = 1000..5000 (also 2000, 4000).  At p = 1/2 the curve is S13's
+  first cusp, width ~1.17 sqrt(n).  It reaches width 0 at x ~ 0.652, which is S5's last cusp
+  (per-n maximum 0.6517..0.6525 for n > 1250): the cusp band ends where the curve meets w = 0.
+- COLUMN BY COLUMN.  In every column of fixed i+j with x < 0.66 (narrow tie points, w < 2), E falls
+  through the narrowest tie points and switches to rising exactly once (n = 500, 1000, 2000, 4000:
+  160, 320, 640, 1280 columns, all of them).  The column's cusps are exactly the first tie points
+  after the switch, one or two of them, consecutive (152/152, 304/304, 609/609, 1217/1217 columns
+  with a narrow cusp).  Never three; about 13% of columns have two; about 5% have none, the switch
+  stepping straight over -1 < u < 0.  So the cusp condition -1 < u < 0 is the sign change of the
+  column's slope, caught when a tie point happens to land in it.
+- F3 < 0 IS EXACTLY "OFF THE CURVE".  Above the curve, falling regions come back as bands
+  (w ~ 3..8, sweeping down to the same x ~ 0.65), and the remaining ~1% of cusps sit on the lower
+  edges of those bands.  These are precisely the cusps with F3 < 0: over every n = 3..5000,
+  47,299 cusps have F3 < 0 and 47,300 have width >= 2 sqrt(n), all 47,299 the same cusps.  The one
+  exception is n = 29, pair (8, 26), width 3.34 sqrt(n), F3 = +1.845.  For n >= 100 there is a
+  clean gap: F3 >= 0 cusps have widths <= 1.252 sqrt(n) (<= 1.206 for n >= 1000), F3 < 0 cusps
+  >= 2.979 sqrt(n), and no cusp lies in between.  This answers the section 5 question "the sign of
+  F3 at cusp points, and why the exceptions cluster where they do" geometrically -- F3 < 0 marks
+  the wide cusps on the higher band edges -- and connects to 2026-10-08: the left side of a Farey
+  gap with even denominator is filled first by wide pairs of width 3.2..4.1 sqrt(n), i.e. by F3 < 0
+  cusps.  Why F3 changes sign between the two families is not explained.
+- Status: all numerical (n <= 5000; the column checks on full tie tables at n = 500..4000).  It
+  suggests a route to S5: a proof that each column switches once, with the switch reaching w = 0
+  at x ~ 0.652, would bound p* for the narrow cusps; the wide ones also stop by x ~ 0.65 here.
+  FACTS.md not updated.
