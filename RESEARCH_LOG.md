@@ -1706,6 +1706,7 @@ every n >= 2, as OBD does).  Everything except fact 12 is NUMERICAL.
   byte check unchanged).  OBD's cusp-proximity plot uses it to carry FCW past the n <= 5000
   tables: at r = 1e-6 out to n = 20,000 in 57 min, where 4,900 unreached p in 0.501..0.651 at
   n = 5000 drop to 90 (the spike cores; 3/5 needs n ~ 19,900).
+
 ### 2026-10-09 (Claude Code): the cusp curve in pair space; F3 < 0 is exactly "off the curve"
 Origin: OBD's pair-space map (OBD `pair-map --n N`, docs/plots/PairMap-n1000.png, -n4000.png).  Every
 tie point (i, j) of one n is drawn at its grid position x = (i+j+1)/(2(n+1)) (~ p*, fact 12) and
