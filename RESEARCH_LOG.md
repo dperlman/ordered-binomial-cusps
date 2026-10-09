@@ -163,7 +163,8 @@ PROMISING (the main reduction):
   negative-F3 cusps are the shallowest.
 - (2026-10-09) Explain the cusp curve: in pair space (grid position, width/sqrt(n)) the narrow
   tie points of each column of fixed i+j go from E falling through them to E rising, exactly once,
-  and the cusps are the first one or two after the switch.  Why one switch, why the curve's
+  and the cusps are the first one or two after the switch: one cusp cluster per grid fraction
+  k/(2(n+1)) below ~0.652.  Why one switch, why the curve's
   limit shape (width ~1.16 sqrt(n) at p = 1/2 down to 0 at p ~ 0.652, which would give S5), and
   why the cusps off it (width >= 2.98 sqrt(n)) are exactly the F3 < 0 ones -- all NUMERICAL so far.
 - (2026-10-08) Cusps sit a small, one-sided offset above the fractions k/(2(n+1)) (fact 12), so
@@ -1727,9 +1728,20 @@ cusp_curve.py reproduces every number below.
   through the narrowest tie points and switches to rising exactly once (n = 500, 1000, 2000, 4000:
   160, 320, 640, 1280 columns, all of them).  The column's cusps are exactly the first tie points
   after the switch, one or two of them, consecutive (152/152, 304/304, 609/609, 1217/1217 columns
-  with a narrow cusp).  Never three; about 13% of columns have two; about 5% have none, the switch
-  stepping straight over -1 < u < 0.  So the cusp condition -1 < u < 0 is the sign change of the
-  column's slope, caught when a tie point happens to land in it.
+  with a narrow cusp).  Never three; about 13% of columns have two.  Every column below x ~ 0.652
+  has at least one; the columns without (8, 16, 31, 63) are exactly those from x ~ 0.652 to the
+  0.66 cut-off, where E rises through every narrow tie point and there is no switch at all.
+  [Corrected 2026-10-09: an earlier version of this entry said ~5% of columns have no cusp
+  because "the switch steps over -1 < u < 0"; it never does below 0.652.]
+  In p the picture is a sawtooth.  A column is a tight cluster of tie points just above its grid
+  point (i+j+1)/(2(n+1)), ordered by width (fact 12's offset grows with width), e.g. n = 1000,
+  i+j = 1200: widths 2..62 span p* = 0.599900..0.600033, against 0.0005 to the next grid point.
+  Walking up the column is walking right through the cluster: each tie point kicks E's slope up by
+  its jump D (here from -8.6 to +22.7), concavity lowers it slightly between kicks, and the cusp is
+  the kick that carries it across zero.  Between clusters E is one smooth concave arc, its slope
+  falling back from about +22 to about -8.6: a smooth maximum.  So below 0.652 the cusps of n are
+  essentially one per grid fraction k/(2(n+1)) (two in ~13% of clusters, when concavity pulls the
+  slope back below zero before the next kick), with smooth maxima in between.
 - F3 < 0 IS EXACTLY "OFF THE CURVE".  Above the curve, falling regions come back as bands
   (w ~ 3..8, sweeping down to the same x ~ 0.65), and the remaining ~1% of cusps sit on the lower
   edges of those bands.  These are precisely the cusps with F3 < 0: over every n = 3..5000,

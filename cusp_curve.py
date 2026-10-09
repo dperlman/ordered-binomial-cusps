@@ -70,6 +70,7 @@ def columns(pool):
         starts = np.r_[0, np.flatnonzero(np.diff(c)) + 1]
         ends = np.r_[starts[1:], c.size]
         shape = at_switch = 0
+        zero_x, zero_all_rising = [], 0
         per_col = np.zeros(4, int)                               # columns with 0, 1, 2, 3+ narrow cusps
         for a, b in zip(starts, ends):
             f = fall[a:b]
@@ -77,6 +78,9 @@ def columns(pool):
             shape += (sw.size == 0) or (sw.size == 1 and f[0])
             cc = np.flatnonzero(cu[a:b])
             per_col[min(cc.size, 3)] += 1
+            if cc.size == 0:
+                zero_x.append((c[a] + 1) / (2 * (n + 1)))
+                zero_all_rising += not f.any()
             nf = np.flatnonzero(~f)
             # the cusps are exactly the first tie points after the switch, consecutively
             at_switch += cc.size > 0 and nf.size > 0 and np.array_equal(cc, np.arange(nf[0], nf[0] + cc.size))
@@ -84,6 +88,9 @@ def columns(pool):
               f"columns with 0/1/2/3+ narrow cusps: {'/'.join(map(str, per_col))}; "
               f"cusps exactly the first tie points after the switch: {at_switch} of {per_col[1:].sum()}; "
               f"narrow cusps {int(cu.sum())} of {int(cusp.sum())}")
+        if zero_x:
+            print(f"      columns with no narrow cusp: grid positions {min(zero_x):.4f}..{max(zero_x):.4f}, "
+                  f"{zero_all_rising} of {len(zero_x)} with E rising through every narrow tie point (no switch)")
 
 
 if __name__ == "__main__":
