@@ -1753,6 +1753,18 @@ cusp_curve.py reproduces every number below.
   the wide cusps on the higher band edges -- and connects to 2026-10-08: the left side of a Farey
   gap with even denominator is filled first by wide pairs of width 3.2..4.1 sqrt(n), i.e. by F3 < 0
   cusps.  Why F3 changes sign between the two families is not explained.
+- WHERE THE WIDE CUSPS SIT: just past a maximum of E, kicked by a tiny jump.  The wide cusps are not
+  in the clusters.  Over n = 1000..5000 they sit a median 0.901 grid steps above a grid fraction
+  (10%..90%: 0.026..0.983), late in the smooth stretch between clusters; the narrow ones sit 0.025
+  above theirs.  Their left slope (median -0.0184) and slope jump (median 0.0477) are both ~40x
+  smaller than the narrow cusps' (-0.784, 1.88).  For 300 random wide cusps, E's slope turns
+  positive within one grid step to the left in every case, a median 1.2e-6 grid steps away (90%:
+  4e-4, max 0.11): each wide cusp is a tie point with a tiny kick landing just after E's slope has
+  crossed zero going down, past a maximum, and flipping it back above zero -- a microscopic dip
+  followed at once by another maximum.  This matches fact 8 ("a cusp then exists only because the
+  other masses' curve rises steeply there, always just before a smooth local max").  Example,
+  n = 1000: pair (546, 655), width 3.45 sqrt(n), F3 = -509.5, at p* = 0.600816, slope -0.0196 ->
+  +0.0042 (OBD docs/plots/Sawtooth-n1000-p0.600.png shows it among three clusters).
 - Status: all numerical (n <= 5000; the column checks on full tie tables at n = 500..4000).  It
   suggests a route to S5: a proof that each column switches once, with the switch reaching w = 0
   at x ~ 0.652, would bound p* for the narrow cusps; the wide ones also stop by x ~ 0.65 here.

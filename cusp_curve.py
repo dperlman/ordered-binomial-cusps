@@ -9,7 +9,9 @@ kink (cusp <=> -1 < u < 0; u <= -1: E falls through the tie point; u >= 0: it ri
   2. the cusps off the curve (w >= 2) against the cusps with F3 < 0, over every n <= 5000;
   3. along each column of fixed i+j (narrow tie points, w < 2), from full tie tables
      (obd_core.tie_table): E falls through the narrowest tie points and switches once to rising,
-     and the column's cusp is the first tie point that is not falling.
+     and the column's cusps are the first one or two tie points that are not falling;
+  4. where the wide cusps sit: how far above a grid fraction, how big their slopes and jumps are,
+     and, for a sample, the distance back to where E's slope turns positive (a smooth maximum).
 
     .venv/bin/python cusp_curve.py            # about a minute (tie tables for n = 500..4000)
 """
@@ -93,7 +95,50 @@ def columns(pool):
                   f"{zero_all_rising} of {len(zero_x)} with E rising through every narrow tie point (no switch)")
 
 
+def wide_cusps(sample=300, seed=0):
+    """Where the wide (F3 < 0) cusps sit: just past a smooth maximum, between the clusters."""
+    print("\n4. the wide cusps (width >= 2 sqrt(n)), n = 1000..5000, against the narrow ones")
+    t = pc.read_csv(CSV, convert_options=pc.ConvertOptions(include_columns=["n", "i", "j", "pstar", "slope_left", "slope_right"]))
+    n, i, j, p, sl, sr = (t[c].to_numpy().astype(float) for c in ("n", "i", "j", "pstar", "slope_left", "slope_right"))
+    w = (j - i) / np.sqrt(n)
+    s = n >= 1000
+    pos = 2 * (n + 1) * p                                       # position in grid steps
+    above = pos - np.floor(pos)                                 # how far above the grid fraction below it
+    for name, k in (("narrow", s & (w < 2)), ("wide", s & (w >= 2))):
+        print(f"   {name:6s}: {k.sum():7,} cusps; left slope median {np.median(sl[k]):+.3g}, "
+              f"slope jump (right - left) median {np.median(sr[k] - sl[k]):.3g}; "
+              f"position above its grid fraction (grid steps): median {np.median(above[k]):.3f}, "
+              f"10%..90% {np.quantile(above[k], 0.1):.3f}..{np.quantile(above[k], 0.9):.3f}")
+    # walk left from a sample of wide cusps until E's slope turns positive: the smooth maximum
+    rng = np.random.default_rng(seed)
+    k = rng.choice(np.flatnonzero(s & (w >= 2)), sample, replace=False)
+    dist, found = [], 0
+    for q in k:
+        N, step = int(n[q]), 1 / (2 * (n[q] + 1))
+        lo, hi = 0.0, None
+        for e in step * np.logspace(-9, 0, 37):                 # first eps with a positive slope at p* - eps
+            if obd_core.E_slopes_at(N, np.array([p[q] - e]))[2][0] > 0:
+                hi = e
+                break
+            lo = e
+        if hi is None:
+            continue
+        found += 1
+        for _ in range(30):                                     # bisect to the crossing
+            mid = 0.5 * (lo + hi)
+            if obd_core.E_slopes_at(N, np.array([p[q] - mid]))[2][0] > 0:
+                hi = mid
+            else:
+                lo = mid
+        dist.append(hi / step)
+    dist = np.array(dist)
+    print(f"   {sample} random wide cusps: E's slope turns positive within one grid step to the left for {found}; "
+          f"the distance back to that smooth maximum in grid steps: median {np.median(dist):.2e}, "
+          f"90% {np.quantile(dist, 0.9):.2e}, max {dist.max():.2e}")
+
+
 if __name__ == "__main__":
     catalogue()
+    wide_cusps()
     with Pool(8) as pool:
         columns(pool)
