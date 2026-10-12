@@ -35,9 +35,8 @@ from first_tie_vs_cusp import lowest_k
 
 def cusps_by_n(path, nmax):
     """{n: (E, band) arrays of that n's cusps, in increasing p*}."""
-    import pyarrow.csv as pc
-    t = pc.read_csv(path, convert_options=pc.ConvertOptions(
-        include_columns=["n", "i", "j", "pstar", "E"]))
+    import cusps_data as cd
+    t = cd.catalogue(path, ["n", "i", "j", "pstar", "E"])
     n, i, j, p, E = (t[c].to_numpy() for c in ("n", "i", "j", "pstar", "E"))
     m = n <= nmax; n, i, j, p, E = n[m], i[m], j[m], p[m], E[m]
     o = np.lexsort((p, n)); n, E, band = n[o], E[o], (i + j - n)[o]
@@ -80,7 +79,7 @@ def series_values(ns, keys, fixed, csv, absolute=False):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default="cusps/cusps_all.csv")
+    ap.add_argument("--csv", default=None, help="default: the shared store (obd_core.store); a path reads that CSV instead")
     ap.add_argument("--nmin", type=int, default=2)
     ap.add_argument("--nmax", type=int, default=100)
     ap.add_argument("--absolute", action="store_true", help="plot E/n, not (E - E(1/2))/n")

@@ -22,9 +22,8 @@ import argparse, csv, os
 import numpy as np
 
 def per_n(path):
-    import pyarrow.csv as pc
-    t = pc.read_csv(path, convert_options=pc.ConvertOptions(
-        include_columns=["n", "i", "j", "S_minus", "S_plus"]))
+    import cusps_data as cd
+    t = cd.catalogue(path, ["n", "i", "j", "S_minus", "S_plus"], exact_kink=True)
     n = t["n"].to_numpy()
     f = (t["S_plus"].to_numpy() - t["S_minus"].to_numpy())/(t["j"].to_numpy() - t["i"].to_numpy())
     o = np.argsort(n, kind="stable"); n, f = n[o], f[o]
@@ -58,7 +57,7 @@ def compare(r, grp, rng, reps=20000):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default="cusps/cusps_all.csv")
+    ap.add_argument("--csv", default=None, help="default: the shared store (obd_core.store); a path reads that CSV instead")
     ap.add_argument("--nmin", type=int, default=100)
     ap.add_argument("--window", type=int, default=100)
     ap.add_argument("--out", default="analysis")

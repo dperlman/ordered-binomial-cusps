@@ -52,7 +52,7 @@ def parity_offset(x, y, band, order=2, keep=False):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default="cusps/cusps_all.csv")
+    ap.add_argument("--csv", default=None, help="default: the shared store (obd_core.store); a path reads that CSV instead")
     ap.add_argument("--nmin", type=int, default=2)
     ap.add_argument("--nmax", type=int, default=1000)
     ap.add_argument("--series", default="t1,t2,t5,t10,t20,t50,t100")

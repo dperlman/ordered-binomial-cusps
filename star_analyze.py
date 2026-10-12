@@ -36,8 +36,8 @@ def load_M20(out, ns, mmax=20):
 
 def band_cusps(path, nmax):
     """{(n, b): (E_min, i, j, count)} for b = 1..3, lowest-E cusp of each band."""
-    import pyarrow.csv as pc
-    t = pc.read_csv(path, convert_options=pc.ConvertOptions(include_columns=["n", "i", "j", "E"]))
+    import cusps_data as cd
+    t = cd.catalogue(path, ["n", "i", "j", "E"])
     n, i, j, E = (t[c].to_numpy() for c in ("n", "i", "j", "E"))
     b = i + j - n
     sel = (b <= 3) & (n <= nmax)
@@ -65,7 +65,7 @@ def fit_LR(ns, R):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="analysis")
-    ap.add_argument("--cusps", default="cusps/cusps_all.csv")
+    ap.add_argument("--cusps", default=None, help="default: the shared store (obd_core.store); a path reads that CSV instead")
     ap.add_argument("--fit-nmin", type=int, default=500)
     ap.add_argument("--workers", type=int, default=8)
     a = ap.parse_args()

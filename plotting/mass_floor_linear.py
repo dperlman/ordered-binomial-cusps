@@ -28,9 +28,8 @@ CLOUD_LO, CLOUD_HI = "#dde1e6", "#3d434b"
 
 def load(path):
     """(n, f) for every cusp, sorted by n."""
-    import pyarrow.csv as pc
-    t = pc.read_csv(path, convert_options=pc.ConvertOptions(
-        include_columns=["n", "i", "j", "S_minus", "S_plus"]))
+    import cusps_data as cd
+    t = cd.catalogue(path, ["n", "i", "j", "S_minus", "S_plus"], exact_kink=True)
     n = t["n"].to_numpy(); w = t["j"].to_numpy() - t["i"].to_numpy()
     f = (t["S_plus"].to_numpy() - t["S_minus"].to_numpy())/w
     o = np.argsort(n, kind="stable")
@@ -43,7 +42,7 @@ def per_n(n, f):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default="cusps/cusps_all.csv")
+    ap.add_argument("--csv", default=None, help="default: the shared store (obd_core.store); a path reads that CSV instead")
     ap.add_argument("--out", default="plots")
     ap.add_argument("--height", type=int, default=st.DEFAULT_H)
     ap.add_argument("--fit-from", type=int, default=300)

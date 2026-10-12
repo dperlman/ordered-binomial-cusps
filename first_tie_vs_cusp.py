@@ -55,8 +55,8 @@ def first_tie(n):
     return n, i1, j1, p(b1), i2, j2, p(b2), b2 - b1
 
 def lowest_cusps(path, nmax):
-    import pyarrow.csv as pc
-    t = pc.read_csv(path, convert_options=pc.ConvertOptions(include_columns=["n", "i", "j", "pstar"]))
+    import cusps_data as cd
+    t = cd.catalogue(path, ["n", "i", "j", "pstar"])
     n, i, j, p = (t[c].to_numpy() for c in ("n", "i", "j", "pstar"))
     m = n <= nmax; n, i, j, p = n[m], i[m], j[m], p[m]
     o = np.lexsort((p, n)); n, i, j, p = n[o], i[o], j[o], p[o]
@@ -65,7 +65,7 @@ def lowest_cusps(path, nmax):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default="cusps/cusps_all.csv")
+    ap.add_argument("--csv", default=None, help="default: the shared store (obd_core.store); a path reads that CSV instead")
     ap.add_argument("--nmin", type=int, default=3)
     ap.add_argument("--nmax", type=int, default=5000)
     ap.add_argument("--workers", type=int, default=8)

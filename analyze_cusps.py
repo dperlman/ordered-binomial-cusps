@@ -35,15 +35,17 @@ def E_half(n, lnC=None):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("csv", nargs='+'); ap.add_argument("--nmax", type=int, default=10**9)
+    ap.add_argument("csv", nargs='*', help="default: the shared store; or CSV files, read as before")
+    ap.add_argument("--nmax", type=int, default=10**9)
     ap.add_argument("--out", default="analysis"); a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     rows = []
-    for fn in a.csv:
-        with open(fn) as f:
-            for r in csv.DictReader(f):
-                if r['pstar'] == '' or int(r['n']) > a.nmax: continue
-                rows.append(r)
+    import cusps_data as cd
+    srcs = [csv.DictReader(open(fn)) for fn in a.csv] or [cd.cusp_rows(exact_kink=True)]
+    for src in srcs:
+        for r in src:
+            if r['pstar'] == '' or int(r['n']) > a.nmax: continue
+            rows.append(r)
     byn = defaultdict(list)
     for r in rows: byn[int(r['n'])].append(r)
     print(f"{len(rows)} cusps over {len(byn)} values of n (max n={max(byn)})", flush=True)

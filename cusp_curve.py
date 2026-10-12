@@ -22,11 +22,11 @@ import pyarrow.csv as pc
 
 import obd_core
 
-CSV = "cusps/cusps_all.csv"
+import cusps_data as cd                  # the cusp catalogue, from the shared store
 
 
 def catalogue():
-    t = pc.read_csv(CSV, convert_options=pc.ConvertOptions(include_columns=["n", "i", "j", "F3", "F3_sign"]))
+    t = cd.read_cusps(["n", "i", "j", "F3", "F3_sign"])
     n, i, j, f3 = (t[c].to_numpy().astype(float) for c in ("n", "i", "j", "F3"))
     neg = t["F3_sign"].to_numpy(zero_copy_only=False) == "-"
     x = (i + j + 1) / (2 * (n + 1))
@@ -98,7 +98,7 @@ def columns(pool):
 def wide_cusps(sample=300, seed=0):
     """Where the wide (F3 < 0) cusps sit: just past a smooth maximum, between the clusters."""
     print("\n4. the wide cusps (width >= 2 sqrt(n)), n = 1000..5000, against the narrow ones")
-    t = pc.read_csv(CSV, convert_options=pc.ConvertOptions(include_columns=["n", "i", "j", "pstar", "slope_left", "slope_right"]))
+    t = cd.read_cusps(["n", "i", "j", "pstar", "slope_left", "slope_right"], exact_kink=True)
     n, i, j, p, sl, sr = (t[c].to_numpy().astype(float) for c in ("n", "i", "j", "pstar", "slope_left", "slope_right"))
     w = (j - i) / np.sqrt(n)
     s = n >= 1000
