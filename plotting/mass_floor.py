@@ -31,8 +31,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 def from_csv(path):
     """{n: array of f(i) over that n's cusps} from the certified table."""
     out = {}
-    with open(path) as fh:
-        for r in csv.DictReader(fh):
+    import cusps_data as cd
+    for r in cd.catalogue_rows(path, exact_kink=True):
             if r['pstar'] == '': continue
             n = int(r['n']); w = int(r['j']) - int(r['i'])
             out.setdefault(n, []).append((float(r['S_plus']) - float(r['S_minus']))/w)
@@ -51,7 +51,7 @@ def from_parquet(data, ns):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default="cusps/cusps_all.csv")
+    ap.add_argument("--csv", default=None, help="default: the shared store (obd_core.store); a path reads that CSV instead")
     ap.add_argument("--data", default="data")
     ap.add_argument("--out", default="plots")
     ap.add_argument("--width", type=int, default=6000)

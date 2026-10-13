@@ -23,8 +23,8 @@ COL = ["#2b5d8a", "#e08b2d", "#1b7a4b", "#8a4fbf", "#c1272d"]
 
 def load(path, k):
     byn = {}
-    with open(path) as fh:
-        for r in csv.DictReader(fh):
+    import cusps_data as cd
+    for r in cd.catalogue_rows(path):
             if r['pstar'] == '': continue
             byn.setdefault(int(r['n']), []).append((float(r['pstar']), float(r['E'])))
     ns = np.array([n for n in sorted(byn) if len(byn[n]) >= k])
@@ -34,7 +34,7 @@ def load(path, k):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default="cusps/cusps_all.csv")
+    ap.add_argument("--csv", default=None, help="default: the shared store (obd_core.store); a path reads that CSV instead")
     ap.add_argument("--out", default="plots"); ap.add_argument("--k", type=int, default=3)
     ap.add_argument("--width", type=int, default=6000); ap.add_argument("--height", type=int, default=3000)
     a = ap.parse_args()

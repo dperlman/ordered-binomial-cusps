@@ -39,8 +39,8 @@ def side_px(w, s1):
 
 def load(path):
     """Per n: (n, i, j, p*) of the cusp with the largest p*."""
-    import pyarrow.csv as pc
-    t = pc.read_csv(path, convert_options=pc.ConvertOptions(include_columns=["n", "i", "j", "pstar"]))
+    import cusps_data as cd
+    t = cd.catalogue(path, ["n", "i", "j", "pstar"])
     n, i, j, p = (t[c].to_numpy() for c in ("n", "i", "j", "pstar"))
     o = np.lexsort((-p, n)); n, i, j, p = n[o], i[o], j[o], p[o]
     ns, first = np.unique(n, return_index=True)
@@ -71,7 +71,7 @@ def parquet_max(data, ns):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default="cusps/cusps_all.csv")
+    ap.add_argument("--csv", default=None, help="default: the shared store (obd_core.store); a path reads that CSV instead")
     ap.add_argument("--data", default="data")
     ap.add_argument("--out", default="plots")
     ap.add_argument("--height", type=int, default=st.DEFAULT_H)

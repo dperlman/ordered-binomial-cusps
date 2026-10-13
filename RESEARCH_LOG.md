@@ -1769,3 +1769,28 @@ cusp_curve.py reproduces every number below.
   suggests a route to S5: a proof that each column switches once, with the switch reaching w = 0
   at x ~ 0.652, would bound p* for the narrow cusps; the wide ones also stop by x ~ 0.65 here.
   FACTS.md not updated.
+
+### 2026-10-12 (Claude Code): the data moves to OBD-core's shared store; this repo's CSVs and Parquet retired
+Every tie table, cusp table and tie position now comes from OBD-core's shared store
+(`obd_core.store`, `~/obd-data`, OBD-core v0.8.0), filled by `tie_table` and read here through
+`cusps_data.py` (`read_cusps` gives the catalogue `cusps/cusps_all.csv` held; `load_ties` /
+`load_cusps` the per-n tables `dump_ties.py` wrote).  Design and status: OBD-core `docs/DESIGN.md`.
+- Checked before anything was retired: the store against every older copy (this repo's 17 tie tables
+  bit for bit; the cusp CSVs for every n = 3..5000: the same cusps every time, p*, E, F3, S_- and
+  slope_left the very values the CSV was printed from, S_+ and slope_right within ~1e-10 or, with
+  `exact_kink`, bit for bit).  6,014 comparisons in all, 0 mismatches.
+- Then a before/after run of all 19 scripts that read `cusps/` or `data/` (old files vs the store,
+  same arguments): 16 identical, every plot pixel for pixel.  The differences, none in a value:
+  * certification ROUTE labels: 26 of the 4,421,154 cusps (n <= 5000) that cusps_fast.py recorded as
+    `iv50` are `double` in the store (both certify them as cusps; the two drivers screened slightly
+    differently).  So analyze_cusps.py now reports "interval-certified cusps: 68; with F3<0: 35"
+    (was 94; 37), the per-n interval-certified count in `per_n_summary.csv` drops from 1 to 0 at those
+    26 n (1055, 1167, 1248, ...), and 2 rows of `cusps_F3_negative.csv` change label.  The committed
+    `public/` copies will change the same way when next regenerated.
+  * `check_collisions.py --parquet` now covers the store's 1,046 tie tables instead of this repo's 17:
+    still no collisions.
+- Retired (in git history): `cusps_fast.py`, `dump_ties.py`, `validate_trigger.py`, and the `cusps/`
+  and `data/` folders (moved to the Trash).  OBD-core's `tools/regression_check.py` now does the job
+  of validate_trigger.py and of the old rule-3 comparison against cusps_fast output.
+- Noted, not acted on: `analyze_cusps.py` computes every p* with its own formula (a second copy of
+  OBD-core's `_pstar`) for nearest-neighbour gaps; not checked against OBD-core bit for bit.

@@ -17,7 +17,7 @@ import math
 import numpy as np
 import pyarrow.csv as pc
 
-CSV = "cusps/cusps_all.csv"
+import cusps_data as cd                  # the cusp catalogue, from the shared store
 
 
 def first_n_within_r(cn, cp, grid, r):
@@ -35,7 +35,7 @@ def first_n_within_r(cn, cp, grid, r):
 
 
 def main():
-    t = pc.read_csv(CSV, convert_options=pc.ConvertOptions(include_columns=["n", "i", "j", "pstar"]))
+    t = cd.read_cusps(["n", "i", "j", "pstar"])
     n, i, j, p = (t[c].to_numpy() for c in ("n", "i", "j", "pstar"))
     nf, i_f, j_f = n.astype(float), i.astype(float), j.astype(float)
     m = j_f - i_f

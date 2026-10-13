@@ -12,9 +12,8 @@ __pycache__/
 # --- generated data -------------------------------------------------------
 # Everything below is reproducible from the scripts; it is too big for git and
 # would swamp the history.  Rebuild instead of restoring:
-#   cusps/            cusps_fast.py --nmax N --workers 8 --out cusps/   then --merge
-#   data/             dump_ties.py --n N --data data/
-#   analysis/         analyze_cusps.py cusps/cusps_all.csv --out analysis/
+#   cusps/, data/     retired 2026-10-12: the data lives in OBD-core's shared store (~/obd-data)
+#   analysis/         analyze_cusps.py --out analysis/
 cusps/
 analysis/
 data/

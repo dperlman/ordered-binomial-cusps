@@ -138,8 +138,8 @@ def main():
     ap.add_argument("--parquet", action="store_true")
     ap.add_argument("--cusps", action="store_true")
     ap.add_argument("--exhaustive", type=int, metavar="NMAX")
-    ap.add_argument("--data", default="data/ties")
-    ap.add_argument("--cusps-csv", default="cusps/cusps_all.csv")
+    ap.add_argument("--data", default=None, help="default: the shared store's full tie tables; or an old data/ties directory")
+    ap.add_argument("--cusps-csv", default=None, help="default: the shared store (obd_core.store); a path reads that CSV instead")
     ap.add_argument("--workers", default="auto")
     ap.add_argument("--tol", type=float, default=1e-9,
                     help="exact-check every consecutive pair closer than this (default 1e-9, "
@@ -150,12 +150,20 @@ def main():
     if a.parquet:
         import pyarrow.parquet as pq
         print(f"{'n':>6} {'tie points':>12} {'min gap':>12} {'candidates':>11} {'collisions':>11}")
-        for d in sorted(glob.glob(os.path.join(a.data, 'n=*'))):
-            f = os.path.join(d, 'part.parquet')
-            if not os.path.exists(f): continue
-            n = int(os.path.basename(d).split('=')[1])
-            t = pq.read_table(f, columns=['i', 'j', 'pstar'])
-            i = t['i'].to_numpy(); j = t['j'].to_numpy(); p = t['pstar'].to_numpy()
+        import cusps_data as cd
+        if a.data is None:
+            src = [(n, None) for n in cd.available("ties")]
+        else:
+            src = [(int(os.path.basename(d).split('=')[1]), os.path.join(d, 'part.parquet'))
+                   for d in sorted(glob.glob(os.path.join(a.data, 'n=*')))]
+        for n, f in src:
+            if f is None:
+                t = cd._store().ties(n, columns=['i', 'j', 'pstar'])
+                i = t['i']; j = t['j']; p = t['pstar']
+            else:
+                if not os.path.exists(f): continue
+                t = pq.read_table(f, columns=['i', 'j', 'pstar'])
+                i = t['i'].to_numpy(); j = t['j'].to_numpy(); p = t['pstar'].to_numpy()
             keep = i < j                       # drop the p=1/2 axis row (i=0, j=n)
             keep &= (i + j) > n
             hits, gmin, ncand = screen(n, i[keep], j[keep], p[keep], a.tol)
@@ -165,7 +173,7 @@ def main():
 
     if a.cusps:
         import csv
-        print("\nCUSP-CUSP collisions across every n in", a.cusps_csv)
+        print("\nCUSP-CUSP collisions across every n in", a.cusps_csv or "the shared store")
         cur = None; I = []; J = []; P = []; nn = 0; mg = np.inf; nc = 0
         def flush(nv):
             nonlocal mg, nc
@@ -173,8 +181,13 @@ def main():
             h, g, c = screen(nv, np.array(I), np.array(J), np.array(P), a.tol)
             mg = min(mg, g); nc += c
             return h
-        with open(a.cusps_csv) as fh:
-            rd = csv.reader(fh); next(rd)
+        import cusps_data as cd
+        if a.cusps_csv is None:
+            t = cd.read_cusps(["n", "i", "j", "pstar"])
+            rd = zip(*(t[c].to_numpy() for c in ("n", "i", "j", "pstar")))
+        else:
+            fh = open(a.cusps_csv); rd = csv.reader(fh); next(rd)
+        if True:
             for r in rd:
                 n = int(r[0])
                 if n != cur:

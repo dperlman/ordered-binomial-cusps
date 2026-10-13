@@ -53,7 +53,7 @@ def check_size(path, allow_large):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cusps", default="cusps/cusps_all.csv")
+    ap.add_argument("--cusps", default=None, help="default: the shared store (obd_core.store); a path reads that CSV instead")
     ap.add_argument("--analysis", default="analysis")
     ap.add_argument("--out", default="public")
     ap.add_argument("--dry-run", action="store_true", help="report sizes, write nothing")
@@ -67,9 +67,16 @@ def main():
 
     # --- SAMPLE: every cusp for the pinned DECADE values of n -------------------
     dec = os.path.join(tmp, "cusps_decade.csv")
-    with open(a.cusps) as fi, open(dec, "w", newline="") as fo:
-        rd = csv.reader(fi); w = csv.writer(fo, lineterminator="\n")
-        w.writerow(next(rd)); n_rows = 0; n_all = 0; n_max = 0
+    if a.cusps is None:                     # the shared store: only the pinned n are read
+        import cusps_data as cd
+        n_max = cd._run_end("cusps")
+        lines = [next(cd.cusp_lines(3, 3))] + [l for n in DECADE for l in list(cd.cusp_lines(n, n, exact_kink=True))[1:]]
+        fi = None
+    else:
+        fi = open(a.cusps); lines = fi; n_max = 0
+    with open(dec, "w", newline="") as fo:
+        rd = csv.reader(lines); w = csv.writer(fo, lineterminator="\n")
+        w.writerow(next(rd)); n_rows = 0; n_all = 0
         for r in rd:
             n_all += 1; n = int(r[0])
             if n > n_max: n_max = n

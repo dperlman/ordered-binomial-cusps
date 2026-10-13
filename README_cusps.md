@@ -1,4 +1,10 @@
-# Cusp-point pipeline
+# Cusp-point pipeline (retired 2026-10-12)
+
+> `cusps_fast.py`, `dump_ties.py` and `validate_trigger.py` were retired on 2026-10-12, with the
+> `cusps/` and `data/` folders they wrote: the data now comes from OBD-core's shared store
+> (`obd_core.store`, `~/obd-data`), read through `cusps_data.py`, and was checked against those
+> files before they went. The scripts remain in git history. What follows describes the pipeline as
+> it was.
 
 `cusps_fast.py` finds all "cusp points" (tie points p* = p*(n,i,j) with i+j>n at which the
 ordered-binomial expectation E(n,p) has a local minimum) and records p*, E, F3, and the one-sided
