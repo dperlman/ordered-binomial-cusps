@@ -70,27 +70,23 @@ C=https://raw.githubusercontent.com/dperlman/OBD-core/v0.8.0/constraints.txt   #
 .venv/bin/pip install -c $C numpy mpmath numba pyarrow matplotlib scipy
 .venv/bin/pip install -c $C "obd-core[store] @ git+https://github.com/dperlman/OBD-core.git@v0.8.0"
 
-.venv/bin/python cusps_fast.py --nmax 1000 --workers 8 --out cusps/   # certified cusp tables
-.venv/bin/python cusps_fast.py --merge --out cusps/
-
-.venv/bin/python dump_ties.py --n 1000 --data data/ --workers 8       # every tie point, for plots
+# the data: OBD-core's shared store (~/obd-data), read through cusps_data.py; a table not yet stored
+# is computed by OBD-core and saved there on first use
 .venv/bin/python plotting/cusp_indicator.py --n 1000
 
 .venv/bin/python star_check.py --nmax 5000 --workers 8 --out analysis/  # (★) at every switch point
 ```
 
-`n = 1000` takes under two minutes on eight cores; `n <= 3000` takes about 2.5 hours.
+Computing the certified cusps of every n <= 5000 from scratch takes about 12 hours on eight cores; the store keeps them, so this is done once.
 
 ## Where things are
 
 | file | |
 |---|---|
 | [`RESEARCH_LOG.md`](RESEARCH_LOG.md) | **the substance** — definitions, proved facts, numerical results, proof approaches (including the failed ones), open questions, and a dated log of every run |
-| [`README_cusps.md`](README_cusps.md) | how to run the pipeline, timings, output columns |
+| [`README_cusps.md`](README_cusps.md) | the retired CSV pipeline (`cusps_fast.py`), kept for its timings and history |
 | [`obd_core`](https://github.com/dperlman/OBD-core) | the only implementation of the mathematics, in its own repository [OBD-core](https://github.com/dperlman/OBD-core); everything else imports it |
-| [`cusps_fast.py`](cusps_fast.py) | certified generator (numba screen + interval arithmetic) |
-| [`dump_ties.py`](dump_ties.py) | Parquet export of every tie point |
-| [`cusps_data.py`](cusps_data.py) | reader; derives the slope decomposition, gaps and indicators |
+| [`cusps_data.py`](cusps_data.py) | reads the shared store (OBD-core's `obd_core.store`, `~/obd-data`): the cusp catalogue and per-n tables; derives the slope decomposition, gaps and indicators |
 | [`CLAUDE.md`](CLAUDE.md) | working conventions, including the data publication policy |
 | [`runs/`](runs/) | launch scripts of the long batch runs behind results in `FACTS.md` |
 

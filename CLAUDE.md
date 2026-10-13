@@ -64,11 +64,6 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   flags that exist only to preserve a less accurate calculation were removed on 2026-09-20; files
   written before then differ in the last digits of E and the slope numerators, so regenerate rather
   than mixing them.
-- cusps_fast.py: the certified generator (CLI, parallel driver, per-n CSV, merge, recheck).  Parallel, resumable generator of all cusp points up to
-  --nmax; its docstring holds the definitions, method, column list and history.
-  Run: python cusps_fast.py --nmax 2000 --workers 8 --out cusps/  then  --merge --out cusps/.
-  Merge options: --split-mb, --merge-nmin/--merge-nmax, --slim.  --recheck n i j prints every value at
-  that tie point from obd_core.reference (rigorous enclosures; --dps is the starting precision).
 - numba screening kernel (recurrence for the masses, two-pointer merge for ranks, O(n) per tie
   point); masses below TINY=1e-290 are treated as zero, which keeps the interval-arithmetic
   workload at 4-86 checks per n (mean 33) for n=1001..2000.
@@ -76,31 +71,29 @@ in step with the log: when a result is locked in or corrected, update both.  No 
   GAP=1e-8 near-tie proxy with a derived re-ranking cluster bound added to MARGIN.  It leaves every
   verdict unchanged -- validated against all 195,243 recorded interval verdicts for n<=3000
   (0 disagreements) and over ~14.6M tie points in the other direction (0 newly flagged) -- and takes
-  the checks at n=5000 from 1411 to 1.  GAP is now used by nothing but the comparison path:
-  cusps_fast.py --legacy-trigger restores the old proxy for reproducing pre-2026-09-21 runs, and
-  gives byte-identical cusp tables, just far more mpmath.  Re-run validate_trigger.py after ANY
-  change to the kernel's arithmetic.  See RESEARCH_LOG.md, the 2026-09-21 entry, for the bound, the
+  the checks at n=5000 from 1411 to 1.  GAP is now used by nothing but the comparison path (the
+  retired cusps_fast.py --legacy-trigger restored the old proxy for reproducing pre-2026-09-21 runs).
+  After ANY change to the kernel's arithmetic, OBD-core's tools/regression_check.py must pass.  See RESEARCH_LOG.md, the 2026-09-21 entry, for the bound, the
   one genuine re-ranking flag it found, and its caveats.
-- validate_trigger.py: the regression test for that trigger.  --logged replays every escalation in
-  cusps/interval_checks.log against the recorded mpmath verdict; --sweep N... compares both triggers
-  over every tie point of each N.
-- One CSV per n in cusps/; cusps/cusps_all.csv after merge; interval_checks.log lists every
-  tie point that needed interval arithmetic and its verdict.
-- dump_ties.py (obd_core + pyarrow): builds the Parquet plotting datasets for a given n --
-  data/ties/n=NNNNN/ (every tie point) and data/cusps/n=NNNNN/ (cusp subset).  Run
-  .venv/bin/python dump_ties.py --n 100 --data data/ [--verify] [--workers 8].  It CERTIFIES IN
-  PLACE using obd_core.certify, and records decided_by per row.  --workers splits the i-loop into
-  work-balanced chunks and distributes the certifications; output is identical however it is cut
-  (verified byte-for-byte at n=2000).  n=5000 takes 92 s this way.  It does not look is_cusp up in
-  cusps_all.csv: a lookup silently marks every tie point as a non-cusp for any n the CSV does not
-  cover, which looks like a result rather than an error.  --verify cross-checks against the CSV
-  where it exists, as a regression test rather than a dependency.
+- DATA (since 2026-10-12): every tie table, cusp table and tie position comes from OBD-core's shared
+  store (obd_core.store, ~/obd-data), filled by tie_table; this repo produces no data of its own.
+  Read it through cusps_data.py: read_cusps() / cusp_rows() / cusp_lines() give the catalogue that
+  cusps/cusps_all.csv held (same rows, (n,i,j) order, columns; exact_kink=True for S_plus and
+  slope_right bit for bit), and load_ties(n) / load_cusps(n) give the per-n tables dump_ties.py
+  used to write.  Scripts take an explicit --csv / --cusps / --data path only to read an old file.
+  The store's design, status and what is deliberately not planned: ~/git/OBD-core/docs/DESIGN.md.
+- RETIRED 2026-10-12 (still in git history): cusps_fast.py (the CSV generator), dump_ties.py (the
+  Parquet export) and validate_trigger.py (the trigger regression test), with the cusps/ and data/
+  folders they wrote.  The store was checked against every one of those files (0 mismatches), and a
+  before/after run of every script here showed identical results apart from 26 certification-route
+  labels (RESEARCH_LOG 2026-10-12).  OBD-core's tools/regression_check.py now does what
+  validate_trigger.py and rule 3's cusps_fast comparison did.
 - Every tie point carries the full slope decomposition (A/T/V and their slopes), not just cusps;
   only the cusp-to-cusp distance columns are cusp-specific.
-- cusps_data.py: reader for those datasets; derives width, band, w_i, f_i, T, A, V, all the slopes,
+- cusps_data.py: reader for the store (see DATA above); derives width, band, w_i, f_i, T, A, V, all the slopes,
   D and the gap columns.  Use it rather than recomputing -- it encodes two numerical rules
   (normalised masses, and never subtracting S_plus-S_minus).  See RESEARCH_LOG.md section 7 (data architecture).
-- analyze_cusps.py (numpy only): analyses straight off cusps_all.csv; writes analysis/.
+- analyze_cusps.py (numpy only): analyses over the cusp catalogue (from the store); writes analysis/.
 - star_check.py: exhaustive switch-point check of the (★) reduction (RESEARCH_LOG 2026-09-24).  Uses
   scipy (bdtr) -- it is NOT part of the certified generator.  --validate / --mp-check / --lemma-check;
   run: --nmax 5000 --workers 8 --out analysis/.  Writes one file per n of ~n rows (1.1 GB at n<=5000,
@@ -285,9 +278,8 @@ Rules that keep this working:
   matplotlib and the like).  Prefer a package over hand-rolling something it already does well.
   NEVER install into the system Python or into the miniconda envs; .venv is the only target, and it
   is disposable -- it can be rebuilt from scratch at any time.  Say in your reply what you installed.
-  Keep the certified generator (cusps_fast.py) lean -- numpy, mpmath, numba only -- so its numerics
-  stay easy to audit; analysis, export and plotting scripts may use more.
+  Analysis and plotting scripts may use more than numpy; the numerics themselves live in OBD-core.
 - Keep text outputs as CSV with a header; bulk numeric data for plotting goes in Parquet (see the
   data architecture notes in RESEARCH_LOG.md).
 - When adding analyses (nearest-neighbor cusp gaps, F3 sign tables, etc.), write them as
-  separate small scripts that read cusps/cusps_all.csv rather than recomputing cusps.
+  separate small scripts that read the cusp catalogue (cusps_data.read_cusps) rather than recomputing cusps.
