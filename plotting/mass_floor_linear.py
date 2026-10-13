@@ -21,6 +21,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # cusps_data
 import _style as st
 
 C_MED, C_MIN, C_ENV = "#2a78d6", "#e34948", "#7a1216"   # from a validated set
