@@ -66,9 +66,9 @@ tables are not published: they are gigabytes, and the code regenerates them in a
 
 ```bash
 python3 -m venv .venv                       # use a native arm64 Python on Apple Silicon
-C=https://raw.githubusercontent.com/dperlman/OBD-core/v0.8.0/constraints.txt   # pinned numpy/numba/llvmlite/mpmath
+C=https://raw.githubusercontent.com/dperlman/OBD-core/v0.8.1/constraints.txt   # pinned numpy/numba/llvmlite/mpmath
 .venv/bin/pip install -c $C numpy mpmath numba pyarrow matplotlib scipy
-.venv/bin/pip install -c $C "obd-core[store] @ git+https://github.com/dperlman/OBD-core.git@v0.8.0"
+.venv/bin/pip install -c $C "obd-core[store] @ git+https://github.com/dperlman/OBD-core.git@v0.8.1"
 
 # the data: OBD-core's shared store (~/obd-data), read through cusps_data.py; a table not yet stored
 # is computed by OBD-core and saved there on first use
