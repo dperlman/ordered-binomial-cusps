@@ -177,27 +177,45 @@ PROMISING (the main reduction):
 
 ## 6. Files
 
-- cusps_fast.py: the generator (numba); its docstring has the definitions and method.  The older numpy
-  script cusps_parallel.py was removed 2026-09-18 after cusps_fast.py reproduced all of its n<=1000
-  output byte for byte (see section 8).
-- cusps/nNNNNN.csv: per-n results; cusps/interval_checks.log; merge with --merge [--split-mb --slim].
-  cusps/cusps_all.csv = cusps_n2000.csv.gz (n<=2000); cusps_n1000.csv.gz (n<=1000).
-- Columns: n,i,j,pstar,E,F3,F3_sign,S_minus,S_plus,slope_left,slope_right,certified_by
-  (slim: n,i,j,pstar,E,F3,F3_sign,slope_left,slope_right).
-- analyze_cusps.py (numpy only): analyses over cusps_all.csv; writes analysis/ (per_n_summary.csv,
-  negF3_neighbors.csv, all_neighbors.csv, summary.txt).  Copies of per_n_summary.csv and
-  negF3_neighbors.csv are at the top level.
+Since 2026-10-12 every tie and cusp table comes from OBD-core's shared store (~/obd-data), read
+through cusps_data.py; this repo produces no tables.  The design of the store and of the three
+repositories: ~/git/OBD-core/docs/DESIGN.md.
+
+- cusps_data.py: the reader.  read_cusps() / cusp_rows() / cusp_lines() give the cusp catalogue
+  (the rows and columns cusps/cusps_all.csv had: n,i,j,pstar,E,F3,F3_sign,S_minus,S_plus,
+  slope_left,slope_right,certified_by); load_ties(n) / load_cusps(n) the per-n tables; it derives
+  the plotting quantities (section 7).
+- Superseded 2026-10-12 (in git history; RESEARCH_LOG 2026-10-12): cusps_fast.py, the generator
+  (numba; it drove OBD-core's kernel), with its per-n cusps/nNNNNN.csv, cusps/interval_checks.log
+  and merged cusps/cusps_all.csv; dump_ties.py and its data/ Parquet dumps; validate_trigger.py.
+  The older numpy script cusps_parallel.py was removed 2026-09-18 after cusps_fast.py reproduced
+  all of its n<=1000 output byte for byte (see section 8).  The cusps_n*.csv.gz archives at the top
+  level are leftovers of that pipeline.
+- analyze_cusps.py (numpy only): analyses over the cusp catalogue (from the store, or CSV files given
+  on the command line); writes analysis/ (per_n_summary.csv, negF3_neighbors.csv,
+  all_neighbors.csv, summary.txt).  Copies of per_n_summary.csv and negF3_neighbors.csv are at the
+  top level.  make_public_data.py builds public/ from the same catalogue.
 - star_check.py (numpy + scipy + mpmath): exhaustive switch-point check of (★), parallel per n;
   --validate, --mp-check, --lemma-check.  star_analyze.py: its analyses.  See the 2026-09-24 entries.
 - cusp_curve.py (numpy + pyarrow + obd_core): the cusp curve in pair space and F3 < 0 as the cusps
   off it, every number in the 2026-10-09 entry (about 25 s).
 - farey_cusps.py (numpy + pyarrow): fact 12 and the Farey structure of the cusp positions, every
-  number in the 2026-10-08 entry, from cusps/cusps_all.csv alone (about a minute).
+  number in the 2026-10-08 entry, from the cusp catalogue alone (about a minute).
+- check_collisions.py / screen_collisions.py / verify_fact_c.py: tie-point collisions (CLAUDE.md,
+  Conventions).  first_tie_vs_cusp.py, inspect_tie.py, parity_compare.py, prime_compare.py: the
+  checks named in their docstrings.  plotting/: the plots (CLAUDE.md, Code).
 - Original question sheet: 3QuestsClaude.pdf (page 21 of a larger note).
 
 ## 7. Data architecture (plotting datasets)
 
-Layout, built on demand per n by dump_ties.py, read by cusps_data.py:
+SUPERSEDED IN PART (2026-10-12).  The layout below (data/, dump_ties.py, manifest.csv) and the
+per-file sizes are how the data was kept before OBD-core's store; they are kept for the record.
+Where the data lives now, its format and how it is checked: ~/git/OBD-core/docs/DESIGN.md.  STILL
+CURRENT: the two numerical rules (masses normalised by their sum; the kink taken from ln_fi, so
+slope_right = slope_left + D, never S_plus/(p q) or S_plus - S_minus), the derived columns, and the
+F3 identities further down.  cusps_data.py applies them to the store's tables.
+
+Layout, built on demand per n by dump_ties.py, read by cusps_data.py (historical):
 
     data/ties/n=NNNNN/part.parquet     every tie point (p*>1/2) for that n
     data/cusps/n=NNNNN/part.parquet    the cusp subset + cusp-to-cusp distances
